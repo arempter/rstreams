@@ -13,7 +13,7 @@ func (s sliceSource) GetOutput() <-chan string {
 	return s.out
 }
 
-func (s *sliceSource) Emit() *sliceSource {
+func (s *sliceSource) Emit() {
 	ch := make(chan string, 5)
 	go func() {
 		for _, e := range s.in {
@@ -22,5 +22,4 @@ func (s *sliceSource) Emit() *sliceSource {
 		close(ch)
 	}()
 	s.out = ch
-	return s
 }

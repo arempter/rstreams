@@ -1,11 +1,6 @@
 package source
 
-type SliceSource interface {
+type Source interface {
 	GetOutput() <-chan string
-	Emit() *sliceSource
-}
-
-type KafkaAvroSource interface {
-	GetOutput() <-chan string
-	Emit() *kafkaAvroSource
+	Emit()
 }

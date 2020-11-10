@@ -16,7 +16,7 @@ type Stream interface {
 }
 
 type stream struct {
-	source source.SliceSource
+	source source.Source
 	steps  []interface{}
 	inChan <-chan string
 }
@@ -44,7 +44,9 @@ func (s *stream) Run() *stream {
 }
 
 func (s *stream) buildDAG() *stream {
-	s.inChan = s.source.Emit().GetOutput()
+	s.source.Emit()
+	s.inChan = s.source.GetOutput()
+
 	for _, step := range s.steps {
 		switch step.(type) {
 		case processors.FilterFuncSpec:
@@ -63,7 +65,7 @@ func (s *stream) buildDAG() *stream {
 	return s
 }
 
-func NewStream(source source.SliceSource) *stream {
+func NewStream(source source.Source) *stream {
 	return &stream{
 		source: source,
 	}
