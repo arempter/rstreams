@@ -1,6 +1,7 @@
 package stream
 
 import (
+	"fmt"
 	"rstreams/processors"
 	"rstreams/sinks"
 	"rstreams/source"
@@ -12,7 +13,8 @@ type Stream interface {
 	Via(f processors.ProcFunc) *stream
 	Filter(f processors.FilterFunc, c func(string) bool) *stream
 	To(f sinks.SinkFunc) *stream
-	Run() *stream
+	Run()
+	Stop()
 }
 
 type stream struct {
@@ -39,14 +41,12 @@ func (s *stream) Via(f processors.ProcFunc) *stream {
 	return s
 }
 
-func (s *stream) Run() *stream {
-	return s.buildDAG()
+func (s *stream) Run() {
+	go s.buildDAG()
 }
 
-func (s *stream) buildDAG() *stream {
-	go func() {
-		s.source.Emit()
-	}()
+func (s *stream) buildDAG() {
+	go s.source.Emit()
 	s.inChan = s.source.GetOutput()
 	for _, step := range s.steps {
 		switch step.(type) {
@@ -63,7 +63,10 @@ func (s *stream) buildDAG() *stream {
 			panic("Unsupported step type")
 		}
 	}
-	return s
+}
+func (s *stream) Stop() {
+	fmt.Println("Sending stop source signal...")
+	s.source.Stop()
 }
 
 func NewStream(source source.Source) *stream {

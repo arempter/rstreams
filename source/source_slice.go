@@ -1,8 +1,13 @@
 package source
 
 type sliceSource struct {
-	in  []string
-	out chan string
+	in   []string
+	out  chan string
+	done chan bool
+}
+
+func (s sliceSource) Stop() {
+	panic("not supported")
 }
 
 func FromSlice(in []string) *sliceSource {

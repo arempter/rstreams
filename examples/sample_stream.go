@@ -6,6 +6,7 @@ import (
 	"rstreams/source"
 	"rstreams/stream"
 	"strings"
+	"time"
 )
 
 func main() {
@@ -25,4 +26,6 @@ func main() {
 		Via(processors.ToUpper).
 		To(sinks.ForeachSink).
 		Run()
+
+	time.Sleep(1 * time.Second)
 }
