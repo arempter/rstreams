@@ -44,9 +44,10 @@ func (s *stream) Run() *stream {
 }
 
 func (s *stream) buildDAG() *stream {
-	s.source.Emit()
+	go func() {
+		s.source.Emit()
+	}()
 	s.inChan = s.source.GetOutput()
-
 	for _, step := range s.steps {
 		switch step.(type) {
 		case processors.FilterFuncSpec:

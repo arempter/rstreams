@@ -2,11 +2,14 @@ package source
 
 type sliceSource struct {
 	in  []string
-	out <-chan string
+	out chan string
 }
 
 func FromSlice(in []string) *sliceSource {
-	return &sliceSource{in: in}
+	return &sliceSource{
+		in:  in,
+		out: make(chan string, 5),
+	}
 }
 
 func (s sliceSource) GetOutput() <-chan string {
@@ -14,12 +17,10 @@ func (s sliceSource) GetOutput() <-chan string {
 }
 
 func (s *sliceSource) Emit() {
-	ch := make(chan string, 5)
 	go func() {
 		for _, e := range s.in {
-			ch <- e
+			s.out <- e
 		}
-		close(ch)
+		close(s.out)
 	}()
-	s.out = ch
 }

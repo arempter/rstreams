@@ -21,8 +21,8 @@ func main() {
 	}
 
 	stream.
-		Via(processors.ToUpper).
 		Filter(processors.Filter, containsStringFunc).
+		Via(processors.ToUpper).
 		To(sinks.ForeachSink).
 		Run()
 }
