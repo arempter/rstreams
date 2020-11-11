@@ -12,4 +12,11 @@ stream.
     Run()
 ```
 
+* Sample basic stream
 [sample stream code](./examples/sample_stream.go)
+
+* Kafka consumer 
+[sample kafka](./examples/kafka_stream.go)
+
+* Merge streams
+[sample merge](./examples/sample_merge.go)
