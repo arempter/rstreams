@@ -2,7 +2,7 @@ package source
 
 type sliceSource struct {
 	in   []string
-	out  chan string
+	out  chan interface{}
 	done chan bool
 }
 
@@ -13,11 +13,11 @@ func (s sliceSource) Stop() {
 func FromSlice(in []string) *sliceSource {
 	return &sliceSource{
 		in:  in,
-		out: make(chan string, 5),
+		out: make(chan interface{}, 5),
 	}
 }
 
-func (s sliceSource) GetOutput() <-chan string {
+func (s sliceSource) GetOutput() <-chan interface{} {
 	return s.out
 }
 

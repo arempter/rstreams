@@ -4,22 +4,30 @@ import (
 	"strings"
 )
 
-func ToUpper(in <-chan string) <-chan string {
-	out := make(chan string)
+func ToUpper(in <-chan interface{}) <-chan interface{} {
+	out := make(chan interface{})
 	go func() {
 		for e := range in {
-			out <- strings.ToUpper(e)
+			switch e.(type) {
+			case string:
+				out <- strings.ToUpper(e.(string))
+			default:
+			}
 		}
 		close(out)
 	}()
 	return out
 }
 
-func ToLower(in <-chan string) <-chan string {
-	out := make(chan string)
+func ToLower(in <-chan interface{}) <-chan interface{} {
+	out := make(chan interface{})
 	go func() {
 		for e := range in {
-			out <- strings.ToLower(e)
+			switch e.(type) {
+			case string:
+				out <- strings.ToLower(e.(string))
+			default:
+			}
 		}
 		close(out)
 	}()

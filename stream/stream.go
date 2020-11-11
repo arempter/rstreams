@@ -7,8 +7,7 @@ import (
 	"rstreams/source"
 )
 
-//todo: drain / stop
-
+//todo: logging && error
 type Stream interface {
 	Via(f processors.ProcFunc) *stream
 	Filter(f processors.FilterFunc, c func(string) bool) *stream
@@ -20,7 +19,7 @@ type Stream interface {
 type stream struct {
 	source source.Source
 	steps  []interface{}
-	inChan <-chan string
+	inChan <-chan interface{}
 }
 
 func (s *stream) Filter(f processors.FilterFunc, predicate func(string) bool) *stream {

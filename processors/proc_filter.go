@@ -1,11 +1,15 @@
 package processors
 
-func Filter(in <-chan string, predicate Predicate) <-chan string {
-	out := make(chan string)
+func Filter(in <-chan interface{}, predicate Predicate) <-chan interface{} {
+	out := make(chan interface{})
 	go func() {
 		for e := range in {
-			if predicate(e) {
-				out <- e
+			switch e.(type) {
+			case string:
+				if predicate(e.(string)) {
+					out <- e.(string)
+				}
+			default:
 			}
 		}
 		close(out)

@@ -1,8 +1,8 @@
 package processors
 
 type Predicate func(string) bool
-type ProcFunc func(<-chan string) <-chan string
-type FilterFunc func(<-chan string, Predicate) <-chan string
+type ProcFunc func(<-chan interface{}) <-chan interface{}
+type FilterFunc func(<-chan interface{}, Predicate) <-chan interface{}
 type FilterFuncSpec struct {
 	Body      FilterFunc
 	Predicate Predicate

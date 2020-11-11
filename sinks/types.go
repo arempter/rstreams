@@ -1,3 +1,3 @@
 package sinks
 
-type SinkFunc func(<-chan string)
+type SinkFunc func(<-chan interface{})
