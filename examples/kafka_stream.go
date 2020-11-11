@@ -4,9 +4,11 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/hamba/avro"
 	"log"
+	"rstreams/processors"
 	"rstreams/sinks"
 	"rstreams/source"
 	"rstreams/stream"
+	"strings"
 	"time"
 )
 
@@ -29,8 +31,16 @@ func main() {
 		"session.timeout.ms":    6000,
 		"auto.offset.reset":     "earliest",
 	}
+	hasValueFunc := func(s string) bool {
+		if !strings.Contains(strings.ToLower(s), "1.") {
+			return false
+		}
+		return true
+	}
+
 	stream := stream.NewStream(source.FromKafkaAvro(kc, []string{"reactiveLab"}, schema))
 	stream.
+		Filter(processors.Filter, hasValueFunc).
 		Via(decodeToNative).
 		To(sinks.ForeachSink).
 		Run()

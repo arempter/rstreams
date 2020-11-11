@@ -9,6 +9,11 @@ func Filter(in <-chan interface{}, predicate Predicate) <-chan interface{} {
 				if predicate(e.(string)) {
 					out <- e.(string)
 				}
+			case []byte:
+				asString := string(e.([]uint8))
+				if predicate(asString) {
+					out <- e
+				}
 			default:
 			}
 		}
