@@ -4,8 +4,8 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/hamba/avro"
 	"log"
-	"rstreams/processors"
-	"rstreams/sinks"
+	"rstreams/processor"
+	"rstreams/sink"
 	"rstreams/source"
 	"rstreams/stream"
 	"strings"
@@ -40,9 +40,9 @@ func main() {
 
 	stream := stream.NewStream(source.FromKafkaAvro(kc, []string{"reactiveLab"}, schema))
 	stream.
-		Filter(processors.Filter, hasValueFunc).
+		Filter(processor.Filter, hasValueFunc).
 		Via(decodeToNative).
-		To(sinks.ForeachSink).
+		To(sink.ForeachSink).
 		Run()
 
 	// test stream stop

@@ -1,3 +1,3 @@
-package sinks
+package sink
 
 type SinkFunc func(<-chan interface{})

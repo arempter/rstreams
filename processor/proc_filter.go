@@ -1,4 +1,4 @@
-package processors
+package processor
 
 func Filter(in <-chan interface{}, predicate Predicate) <-chan interface{} {
 	out := make(chan interface{})

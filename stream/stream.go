@@ -2,16 +2,16 @@ package stream
 
 import (
 	"fmt"
-	"rstreams/processors"
-	"rstreams/sinks"
+	"rstreams/processor"
+	"rstreams/sink"
 	"rstreams/source"
 )
 
 //todo: logging && error
 type Stream interface {
-	Via(f processors.ProcFunc) *stream
-	Filter(f processors.FilterFunc, c func(string) bool) *stream
-	To(f sinks.SinkFunc) *stream
+	Via(f processor.ProcFunc) *stream
+	Filter(f processor.FilterFunc, c func(string) bool) *stream
+	To(f sink.SinkFunc) *stream
 	Run()
 	Stop()
 }
@@ -22,20 +22,20 @@ type stream struct {
 	inChan <-chan interface{}
 }
 
-func (s *stream) Filter(f processors.FilterFunc, predicate func(string) bool) *stream {
-	s.steps = append(s.steps, processors.FilterFuncSpec{
+func (s *stream) Filter(f processor.FilterFunc, predicate func(string) bool) *stream {
+	s.steps = append(s.steps, processor.FilterFuncSpec{
 		Body:      f,
 		Predicate: predicate,
 	})
 	return s
 }
 
-func (s *stream) To(f sinks.SinkFunc) *stream {
+func (s *stream) To(f sink.SinkFunc) *stream {
 	s.steps = append(s.steps, f)
 	return s
 }
 
-func (s *stream) Via(f processors.ProcFunc) *stream {
+func (s *stream) Via(f processor.ProcFunc) *stream {
 	s.steps = append(s.steps, f)
 	return s
 }
@@ -49,15 +49,15 @@ func (s *stream) buildDAG() {
 	s.inChan = s.source.GetOutput()
 	for _, step := range s.steps {
 		switch step.(type) {
-		case processors.FilterFuncSpec:
-			ff := step.(processors.FilterFuncSpec)
+		case processor.FilterFuncSpec:
+			ff := step.(processor.FilterFuncSpec)
 			fOut := ff.Body(s.inChan, ff.Predicate)
 			s.inChan = fOut
-		case processors.ProcFunc:
-			pOut := step.(processors.ProcFunc)(s.inChan)
+		case processor.ProcFunc:
+			pOut := step.(processor.ProcFunc)(s.inChan)
 			s.inChan = pOut
-		case sinks.SinkFunc:
-			step.(sinks.SinkFunc)(s.inChan)
+		case sink.SinkFunc:
+			step.(sink.SinkFunc)(s.inChan)
 		default:
 			panic("Unsupported step type")
 		}

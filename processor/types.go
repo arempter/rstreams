@@ -1,4 +1,4 @@
-package processors
+package processor
 
 type Predicate func(string) bool
 type ProcFunc func(<-chan interface{}) <-chan interface{}

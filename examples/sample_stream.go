@@ -1,8 +1,8 @@
 package main
 
 import (
-	"rstreams/processors"
-	"rstreams/sinks"
+	"rstreams/processor"
+	"rstreams/sink"
 	"rstreams/source"
 	"rstreams/stream"
 	"strings"
@@ -22,9 +22,9 @@ func main() {
 	}
 
 	stream.
-		Filter(processors.Filter, containsStringFunc).
-		Via(processors.ToUpper).
-		To(sinks.ForeachSink).
+		Filter(processor.Filter, containsStringFunc).
+		Via(processor.ToUpper).
+		To(sink.ForeachSink).
 		Run()
 
 	time.Sleep(1 * time.Second)
