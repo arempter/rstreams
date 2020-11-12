@@ -66,6 +66,7 @@ func (s *stream) runnableDAG() {
 	}
 }
 
+// stop source for now...
 func (s *stream) Stop() {
 	fmt.Println("Sending stop source signal...")
 	s.source.Stop()

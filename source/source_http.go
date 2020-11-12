@@ -17,7 +17,7 @@ type httpSource struct {
 func FromHttp(urls []string) *httpSource {
 	return &httpSource{
 		urls:     urls,
-		out:      make(chan interface{}),
+		out:      make(chan interface{}, 5),
 		done:     make(chan bool),
 		runEvery: 1 * time.Second,
 	}
@@ -28,17 +28,20 @@ func (h httpSource) GetOutput() <-chan interface{} {
 }
 
 func (h httpSource) Emit() {
-	request := func(url string) {
+	request := func(url string) error {
 		resp, err := http.Get(url)
 		if err != nil {
-			log.Fatal("Request GET failed", err)
+			log.Println("Request GET failed", err)
+			return err
 		}
 		defer resp.Body.Close()
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			log.Fatal("Failed to read response")
+			log.Println("Failed to read response")
+			return err
 		}
 		h.out <- body
+		return nil
 	}
 
 	tick := time.NewTicker(h.runEvery)
