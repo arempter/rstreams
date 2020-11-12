@@ -8,9 +8,10 @@ import (
 )
 
 //todo: logging && error
+//todo: parallel
 type Stream interface {
 	Via(f processor.ProcFunc) *stream
-	Filter(f processor.FilterFunc, c func(string) bool) *stream
+	Filter(f processor.FilterFunc, c func(string) bool) *stream //todo: move to procFunc?
 	To(f sink.SinkFunc) *stream
 	Run()
 	Stop()
@@ -20,6 +21,7 @@ type stream struct {
 	source source.Source
 	steps  []interface{}
 	inChan <-chan interface{}
+	done   chan bool
 }
 
 func (s *stream) Filter(f processor.FilterFunc, predicate func(string) bool) *stream {
@@ -41,10 +43,10 @@ func (s *stream) Via(f processor.ProcFunc) *stream {
 }
 
 func (s *stream) Run() {
-	go s.buildDAG()
+	s.runnableDAG()
 }
 
-func (s *stream) buildDAG() {
+func (s *stream) runnableDAG() {
 	go s.source.Emit()
 	s.inChan = s.source.GetOutput()
 	for _, step := range s.steps {
@@ -63,6 +65,7 @@ func (s *stream) buildDAG() {
 		}
 	}
 }
+
 func (s *stream) Stop() {
 	fmt.Println("Sending stop source signal...")
 	s.source.Stop()
@@ -71,5 +74,6 @@ func (s *stream) Stop() {
 func NewStream(source source.Source) *stream {
 	return &stream{
 		source: source,
+		done:   make(chan bool),
 	}
 }

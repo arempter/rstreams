@@ -42,7 +42,7 @@ func main() {
 	stream.
 		Filter(processor.Filter, hasValueFunc).
 		Via(decodeToNative).
-		To(sink.ForeachSink).
+		To(sink.Foreach).
 		Run()
 
 	// test stream stop

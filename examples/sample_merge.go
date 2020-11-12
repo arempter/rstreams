@@ -29,7 +29,7 @@ func main() {
 	stream.
 		Filter(processor.Filter, containsStringFunc).
 		Via(processor.ToUpper).
-		To(sink.ForeachSink).
+		To(sink.Foreach).
 		Run()
 
 	time.Sleep(1 * time.Second)
