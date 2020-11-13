@@ -1,6 +1,7 @@
 package source
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -12,14 +13,20 @@ type httpSource struct {
 	out      chan interface{}
 	done     chan bool
 	runEvery time.Duration
+	error    chan string
 }
 
-func FromHttp(urls []string) *httpSource {
+func (h httpSource) GetErrorCh() <-chan string {
+	return h.error
+}
+
+func Http(urls []string) *httpSource {
 	return &httpSource{
 		urls:     urls,
-		out:      make(chan interface{}, 5),
+		out:      make(chan interface{}, 10),
 		done:     make(chan bool),
 		runEvery: 1 * time.Second,
+		error:    make(chan string),
 	}
 }
 
@@ -28,6 +35,7 @@ func (h httpSource) GetOutput() <-chan interface{} {
 }
 
 func (h httpSource) Emit() {
+	var noOfElements = 0
 	request := func(url string) error {
 		resp, err := http.Get(url)
 		if err != nil {
@@ -40,7 +48,15 @@ func (h httpSource) Emit() {
 			log.Println("Failed to read response")
 			return err
 		}
-		h.out <- body
+		go func() {
+			select {
+			case h.out <- body:
+				noOfElements += 1
+			default:
+				noOfElements += 1
+				h.error <- fmt.Sprintf("step processed: %d dropping element: %s", noOfElements, string(body))
+			}
+		}()
 		return nil
 	}
 

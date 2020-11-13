@@ -38,7 +38,7 @@ func main() {
 		return true
 	}
 
-	stream := stream.NewStream(source.FromKafkaAvro(kc, []string{"reactiveLab"}, schema))
+	stream := stream.FromSource(source.KafkaAvro(kc, []string{"reactiveLab"}, schema))
 	stream.
 		Filter(processor.Filter, hasValueFunc).
 		Via(decodeToNative).

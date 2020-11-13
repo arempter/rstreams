@@ -9,6 +9,10 @@ func (m merge) GetOutput() <-chan interface{} {
 	return m.out
 }
 
+func (m merge) GetErrorCh() <-chan string {
+	panic("implement me")
+}
+
 func (m merge) Emit() {
 	//todo: add sync.WaitGroup
 	output := func(in <-chan interface{}) {
@@ -27,7 +31,7 @@ func (merge) Stop() {
 	panic("todo")
 }
 
-func FromMergeSource(sources ...Source) *merge {
+func MergeSources(sources ...Source) *merge {
 	return &merge{
 		out:     make(chan interface{}),
 		sources: sources,

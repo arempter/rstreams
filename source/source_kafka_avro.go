@@ -22,6 +22,10 @@ func (k kafkaAvroSource) Stop() {
 	k.done <- true
 }
 
+func (k kafkaAvroSource) GetErrorCh() <-chan string {
+	panic("implement me")
+}
+
 func (k *kafkaAvroSource) Emit() {
 	c, err := kafka.NewConsumer(k.kafkaConf)
 	if err != nil {
@@ -63,7 +67,7 @@ func (k *kafkaAvroSource) Emit() {
 	}
 }
 
-func FromKafkaAvro(kafkaConf *kafka.ConfigMap, topics []string, schema string) *kafkaAvroSource {
+func KafkaAvro(kafkaConf *kafka.ConfigMap, topics []string, schema string) *kafkaAvroSource {
 	return &kafkaAvroSource{
 		kafkaConf: kafkaConf,
 		topics:    topics,

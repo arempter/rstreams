@@ -4,4 +4,5 @@ type Source interface {
 	GetOutput() <-chan interface{}
 	Emit()
 	Stop()
+	GetErrorCh() <-chan string
 }

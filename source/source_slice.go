@@ -10,7 +10,11 @@ func (s sliceSource) Stop() {
 	panic("not supported")
 }
 
-func FromSlice(in []string) *sliceSource {
+func (s sliceSource) GetErrorCh() <-chan string {
+	panic("implement me")
+}
+
+func Slice(in []string) *sliceSource {
 	return &sliceSource{
 		in:  in,
 		out: make(chan interface{}, 5),

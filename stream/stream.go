@@ -2,6 +2,7 @@ package stream
 
 import (
 	"fmt"
+	"log"
 	"rstreams/processor"
 	"rstreams/sink"
 	"rstreams/source"
@@ -9,12 +10,14 @@ import (
 
 //todo: logging && error
 //todo: parallel
+
 type Stream interface {
 	Via(f processor.ProcFunc) *stream
 	Filter(f processor.FilterFunc, c func(string) bool) *stream //todo: move to procFunc?
 	To(f sink.SinkFunc) *stream
 	Run()
 	Stop()
+	WireTap()
 }
 
 type stream struct {
@@ -22,8 +25,16 @@ type stream struct {
 	steps  []interface{}
 	inChan <-chan interface{}
 	done   chan bool
+	error  chan string
 }
 
+func FromSource(source source.Source) *stream {
+	return &stream{
+		source: source,
+		done:   make(chan bool),
+		error:  make(chan string),
+	}
+}
 func (s *stream) Filter(f processor.FilterFunc, predicate func(string) bool) *stream {
 	s.steps = append(s.steps, processor.FilterFuncSpec{
 		Body:      f,
@@ -72,9 +83,13 @@ func (s *stream) Stop() {
 	s.source.Stop()
 }
 
-func NewStream(source source.Source) *stream {
-	return &stream{
-		source: source,
-		done:   make(chan bool),
+func (s *stream) WireTap() {
+	go func() {
+		for se := range s.source.GetErrorCh() {
+			s.error <- se
+		}
+	}()
+	for e := range s.error {
+		log.Println("DEBUG", e)
 	}
 }
