@@ -10,7 +10,7 @@ func (s sliceSource) Stop() {
 	panic("not supported")
 }
 
-func (s sliceSource) GetErrorCh() <-chan string {
+func (s sliceSource) GetErrorCh() <-chan error {
 	panic("implement me")
 }
 

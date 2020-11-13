@@ -9,7 +9,7 @@ func (m merge) GetOutput() <-chan interface{} {
 	return m.out
 }
 
-func (m merge) GetErrorCh() <-chan string {
+func (m merge) GetErrorCh() <-chan error {
 	panic("implement me")
 }
 

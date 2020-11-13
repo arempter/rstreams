@@ -1,6 +1,7 @@
 package source
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -13,10 +14,10 @@ type httpSource struct {
 	out      chan interface{}
 	done     chan bool
 	runEvery time.Duration
-	error    chan string
+	error    chan error
 }
 
-func (h httpSource) GetErrorCh() <-chan string {
+func (h httpSource) GetErrorCh() <-chan error {
 	return h.error
 }
 
@@ -26,7 +27,7 @@ func Http(urls []string) *httpSource {
 		out:      make(chan interface{}, 10),
 		done:     make(chan bool),
 		runEvery: 1 * time.Second,
-		error:    make(chan string),
+		error:    make(chan error),
 	}
 }
 
@@ -54,7 +55,7 @@ func (h httpSource) Emit() {
 				noOfElements += 1
 			default:
 				noOfElements += 1
-				h.error <- fmt.Sprintf("step processed: %d dropping element: %s", noOfElements, string(body))
+				h.error <- errors.New(fmt.Sprintf("step processed: %d dropping element: %s", noOfElements, string(body)))
 			}
 		}()
 		return nil

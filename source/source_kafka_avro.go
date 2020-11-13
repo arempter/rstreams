@@ -22,7 +22,7 @@ func (k kafkaAvroSource) Stop() {
 	k.done <- true
 }
 
-func (k kafkaAvroSource) GetErrorCh() <-chan string {
+func (k kafkaAvroSource) GetErrorCh() <-chan error {
 	panic("implement me")
 }
 

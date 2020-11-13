@@ -25,14 +25,14 @@ type stream struct {
 	steps  []interface{}
 	inChan <-chan interface{}
 	done   chan bool
-	error  chan string
+	error  chan error
 }
 
 func FromSource(source source.Source) *stream {
 	return &stream{
 		source: source,
 		done:   make(chan bool),
-		error:  make(chan string),
+		error:  make(chan error),
 	}
 }
 func (s *stream) Filter(f processor.FilterFunc, predicate func(string) bool) *stream {
