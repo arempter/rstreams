@@ -49,15 +49,13 @@ func (h httpSource) Emit() {
 			log.Println("Failed to read response")
 			return err
 		}
-		go func() {
-			select {
-			case h.out <- body:
-				noOfElements += 1
-			default:
-				noOfElements += 1
-				h.error <- errors.New(fmt.Sprintf("step processed: %d dropping element: %s", noOfElements, string(body)))
-			}
-		}()
+		select {
+		case h.out <- body:
+			noOfElements += 1
+		default:
+			noOfElements += 1
+			h.error <- errors.New(fmt.Sprintf("step processed: %d dropping element: %s", noOfElements, string(body)))
+		}
 		return nil
 	}
 
