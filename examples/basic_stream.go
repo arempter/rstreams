@@ -22,7 +22,7 @@ func main() {
 
 	stream.
 		Filter(processor.Filter, containsStringFunc).
-		Via(processor.ToUpper).
+		Via(processor.ToUpper()).
 		To(sink.Foreach()).
 		Run()
 }

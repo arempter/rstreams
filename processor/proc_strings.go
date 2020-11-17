@@ -4,7 +4,15 @@ import (
 	"strings"
 )
 
-func ToUpper(in <-chan interface{}) <-chan interface{} {
+func ToUpper() ProcFuncSpec {
+	return ProcFuncSpec{Body: toUpper}
+}
+
+func ToLower() ProcFuncSpec {
+	return ProcFuncSpec{Body: toLower}
+}
+
+func toUpper(in <-chan interface{}) <-chan interface{} {
 	out := make(chan interface{})
 	go func() {
 		for e := range in {
@@ -19,7 +27,7 @@ func ToUpper(in <-chan interface{}) <-chan interface{} {
 	return out
 }
 
-func ToLower(in <-chan interface{}) <-chan interface{} {
+func toLower(in <-chan interface{}) <-chan interface{} {
 	out := make(chan interface{})
 	go func() {
 		for e := range in {

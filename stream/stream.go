@@ -12,7 +12,7 @@ import (
 //todo: parallel
 
 type Stream interface {
-	Via(f processor.ProcFunc) *stream
+	Via(f processor.ProcFuncSpec) *stream
 	Filter(f processor.FilterFunc, c func(string) bool) *stream //todo: move to procFunc?
 	To(f sink.Collector) *stream
 	Run()
@@ -48,7 +48,7 @@ func (s *stream) To(f sink.Collector) *stream {
 	return s
 }
 
-func (s *stream) Via(f processor.ProcFunc) *stream {
+func (s *stream) Via(f processor.ProcFuncSpec) *stream {
 	s.steps = append(s.steps, f)
 	return s
 }
@@ -66,8 +66,9 @@ func (s *stream) runnableDAG() {
 			ff := step.(processor.FilterFuncSpec)
 			fOut := ff.Body(s.inChan, ff.Predicate)
 			s.inChan = fOut
-		case processor.ProcFunc:
-			pOut := step.(processor.ProcFunc)(s.inChan)
+		case processor.ProcFuncSpec:
+			step := step.(processor.ProcFuncSpec).Body
+			pOut := step(s.inChan)
 			s.inChan = pOut
 		case sink.Collector:
 			c := step.(sink.Collector)
