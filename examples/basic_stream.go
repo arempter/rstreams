@@ -13,8 +13,8 @@ func main() {
 	wordsSource := source.Slice(words)
 	stream := stream.FromSource(wordsSource)
 
-	containsStringFunc := func(s string) bool {
-		if !strings.Contains(strings.ToLower(s), "a") {
+	containsStringFunc := func(i interface{}) bool {
+		if !strings.Contains(strings.ToLower(i.(string)), "a") {
 			return false
 		}
 		return true

@@ -31,18 +31,17 @@ func (f *foreachBP) Receive(in <-chan interface{}) {
 	var buffer bytes.Buffer
 
 	consume := func(bs []byte) {
-		if len(bs) > 5 {
-			buffer.Write(bs)
-		}
+		buffer.Write(bs)
 		if buffer.Len() < f.bufSize {
 			f.onNext <- true
 		}
 	}
 
+	// simulate slow processing
 	process := func() {
 		if buffer.Len() > int(float32(f.bufSize)*0.6) {
-			time.Sleep(time.Duration(rand.Intn(2)) * time.Second)
 			fmt.Println("not empty, reading buffer")
+			time.Sleep(time.Duration(rand.Intn(2)) * time.Second)
 			buffer.WriteTo(os.Stdout)
 		}
 	}

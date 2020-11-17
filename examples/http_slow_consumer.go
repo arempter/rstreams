@@ -1,6 +1,7 @@
 package main
 
 import (
+	"rstreams/processor"
 	"rstreams/sink"
 	"rstreams/source"
 	"rstreams/stream"
@@ -17,9 +18,17 @@ func main() {
 	//	os.Exit(0)
 	//}()
 
+	onlyValidJson := func(s interface{}) bool {
+		if len(s.([]byte)) > 5 {
+			return true
+		}
+		return false
+	}
+
 	go stream.WireTap()
 
 	stream.
+		Filter(processor.Filter, onlyValidJson).
 		To(sink.BufferedForeach()).
 		Run()
 }

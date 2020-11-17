@@ -26,8 +26,8 @@ func main() {
 		os.Exit(0)
 	}()
 
-	containsStringFunc := func(s string) bool {
-		if !strings.Contains(strings.ToLower(s), "s") {
+	containsStringFunc := func(i interface{}) bool {
+		if !strings.Contains(strings.ToLower(i.(string)), "s") {
 			return false
 		}
 		return true

@@ -35,7 +35,7 @@ func FromSource(source source.Source) *stream {
 		error:  make(chan error),
 	}
 }
-func (s *stream) Filter(f processor.FilterFunc, predicate func(string) bool) *stream {
+func (s *stream) Filter(f processor.FilterFunc, predicate func(interface{}) bool) *stream {
 	s.steps = append(s.steps, processor.FilterFuncSpec{
 		Body:      f,
 		Predicate: predicate,
