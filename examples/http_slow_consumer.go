@@ -1,10 +1,9 @@
 package main
 
 import (
-	"fmt"
+	"rstreams/sink"
 	"rstreams/source"
 	"rstreams/stream"
-	"time"
 )
 
 func main() {
@@ -20,19 +19,7 @@ func main() {
 
 	go stream.WireTap()
 
-	slowConsumer := func(in <-chan interface{}) {
-		var noOfElements = 0
-		for e := range in {
-			noOfElements += 1
-			switch e.(type) {
-			case []byte:
-				time.Sleep(1200 * time.Millisecond)
-				fmt.Print(string(e.([]byte)))
-			}
-		}
-	}
-
 	stream.
-		To(slowConsumer).
+		To(sink.BufferedForeach()).
 		Run()
 }

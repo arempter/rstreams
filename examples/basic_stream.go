@@ -23,6 +23,6 @@ func main() {
 	stream.
 		Filter(processor.Filter, containsStringFunc).
 		Via(processor.ToUpper).
-		To(sink.Foreach).
+		To(sink.Foreach()).
 		Run()
 }

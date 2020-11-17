@@ -2,7 +2,8 @@ package source
 
 type Source interface {
 	GetOutput() <-chan interface{}
+	OnNextCh() chan bool
 	Emit()
 	Stop()
-	GetErrorCh() <-chan error
+	ErrorCh() <-chan error
 }

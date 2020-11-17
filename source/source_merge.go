@@ -5,12 +5,16 @@ type merge struct {
 	sources []Source
 }
 
-func (m merge) GetOutput() <-chan interface{} {
-	return m.out
+func (m merge) OnNextCh() chan bool {
+	panic("not supported")
 }
 
-func (m merge) GetErrorCh() <-chan error {
-	panic("implement me")
+func (m merge) ErrorCh() <-chan error {
+	panic("not supported")
+}
+
+func (m merge) GetOutput() <-chan interface{} {
+	return m.out
 }
 
 func (m merge) Emit() {

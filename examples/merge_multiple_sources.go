@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"rstreams/processor"
 	"rstreams/sink"
 	"rstreams/source"
@@ -19,6 +20,12 @@ func main() {
 
 	stream := stream.FromSource(source.MergeSources(wordsSource, wordsSource1, wordsSource2))
 
+	go func() {
+		time.Sleep(3 * time.Second)
+		stream.Stop()
+		os.Exit(0)
+	}()
+
 	containsStringFunc := func(s string) bool {
 		if !strings.Contains(strings.ToLower(s), "s") {
 			return false
@@ -29,8 +36,6 @@ func main() {
 	stream.
 		Filter(processor.Filter, containsStringFunc).
 		Via(processor.ToUpper).
-		To(sink.Foreach).
+		To(sink.Foreach()).
 		Run()
-
-	time.Sleep(1 * time.Second)
 }

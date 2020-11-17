@@ -1,7 +1,6 @@
 package source
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -12,19 +11,25 @@ import (
 type httpSource struct {
 	urls     []string
 	out      chan interface{}
+	onNext   chan bool
 	done     chan bool
 	runEvery time.Duration
 	error    chan error
 }
 
-func (h httpSource) GetErrorCh() <-chan error {
+func (h httpSource) ErrorCh() <-chan error {
 	return h.error
+}
+
+func (h httpSource) OnNextCh() chan bool {
+	return h.onNext
 }
 
 func Http(urls []string) *httpSource {
 	return &httpSource{
 		urls:     urls,
-		out:      make(chan interface{}, 10),
+		out:      make(chan interface{}, 20),
+		onNext:   make(chan bool),
 		done:     make(chan bool),
 		runEvery: 1 * time.Second,
 		error:    make(chan error),
@@ -36,7 +41,6 @@ func (h httpSource) GetOutput() <-chan interface{} {
 }
 
 func (h httpSource) Emit() {
-	var noOfElements = 0
 	request := func(url string) error {
 		resp, err := http.Get(url)
 		if err != nil {
@@ -49,25 +53,20 @@ func (h httpSource) Emit() {
 			log.Println("Failed to read response")
 			return err
 		}
-		select {
-		case h.out <- body:
-			noOfElements += 1
-		default:
-			noOfElements += 1
-			h.error <- errors.New(fmt.Sprintf("step processed: %d dropping element: %s", noOfElements, string(body)))
-		}
+		h.out <- body
 		return nil
 	}
 
-	tick := time.NewTicker(h.runEvery)
 	run := true
 	for run == true {
 		select {
 		case <-h.done:
 			run = false
-		case <-tick.C:
+		// only emit on signal from consumer
+		case <-h.onNext:
+			fmt.Println("demand signal")
 			for _, u := range h.urls {
-				go request(u)
+				request(u)
 			}
 		}
 	}

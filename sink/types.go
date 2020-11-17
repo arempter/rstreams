@@ -1,3 +1,7 @@
 package sink
 
-type SinkFunc func(<-chan interface{})
+type Collector interface {
+	SetOnNextCh(chan bool)
+	HasBackpressure() bool
+	Receive(in <-chan interface{})
+}

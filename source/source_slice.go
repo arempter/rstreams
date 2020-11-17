@@ -6,12 +6,16 @@ type sliceSource struct {
 	done chan bool
 }
 
-func (s sliceSource) Stop() {
+func (s sliceSource) OnNextCh() chan bool {
 	panic("not supported")
 }
 
-func (s sliceSource) GetErrorCh() <-chan error {
-	panic("implement me")
+func (s sliceSource) ErrorCh() <-chan error {
+	panic("not supported")
+}
+
+func (s sliceSource) Stop() {
+	panic("not supported")
 }
 
 func Slice(in []string) *sliceSource {

@@ -14,7 +14,7 @@ import (
 type Stream interface {
 	Via(f processor.ProcFunc) *stream
 	Filter(f processor.FilterFunc, c func(string) bool) *stream //todo: move to procFunc?
-	To(f sink.SinkFunc) *stream
+	To(f sink.Collector) *stream
 	Run()
 	Stop()
 	WireTap()
@@ -43,7 +43,7 @@ func (s *stream) Filter(f processor.FilterFunc, predicate func(string) bool) *st
 	return s
 }
 
-func (s *stream) To(f sink.SinkFunc) *stream {
+func (s *stream) To(f sink.Collector) *stream {
 	s.steps = append(s.steps, f)
 	return s
 }
@@ -69,8 +69,13 @@ func (s *stream) runnableDAG() {
 		case processor.ProcFunc:
 			pOut := step.(processor.ProcFunc)(s.inChan)
 			s.inChan = pOut
-		case sink.SinkFunc:
-			step.(sink.SinkFunc)(s.inChan)
+		case sink.Collector:
+			c := step.(sink.Collector)
+			if c.HasBackpressure() {
+				fmt.Println("got BPS connecting ch")
+				c.SetOnNextCh(s.source.OnNextCh())
+			}
+			c.Receive(s.inChan)
 		default:
 			panic("Unsupported step type")
 		}
@@ -85,7 +90,7 @@ func (s *stream) Stop() {
 
 func (s *stream) WireTap() {
 	go func() {
-		for se := range s.source.GetErrorCh() {
+		for se := range s.source.ErrorCh() {
 			s.error <- se
 		}
 	}()
