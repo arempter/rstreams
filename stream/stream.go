@@ -13,6 +13,7 @@ import (
 type Stream interface {
 	Via(f processor.ProcFuncSpec) *stream
 	Filter(f processor.FilterFunc, c func(string) bool) *stream //todo: move to procFunc?
+	Map(f processor.MapFunc, p processor.MapF) *stream
 	To(f sink.Collector) *stream
 	Run()
 	Stop()
@@ -33,7 +34,16 @@ func FromSource(source source.Source) *stream {
 		done:   make(chan bool),
 	}
 }
-func (s *stream) Filter(f processor.FilterFunc, predicate func(interface{}) bool) *stream {
+
+func (s *stream) Map(f processor.MapFunc, predicate processor.MapF) *stream {
+	s.steps = append(s.steps, processor.MapFuncSpec{
+		Body: f,
+		ArgF: predicate,
+	})
+	return s
+}
+
+func (s *stream) Filter(f processor.FilterFunc, predicate processor.Cond) *stream {
 	s.steps = append(s.steps, processor.FilterFuncSpec{
 		Body:      f,
 		Predicate: predicate,
@@ -61,13 +71,17 @@ func (s *stream) runnableDAG() {
 	s.errors = append(s.errors, s.source.ErrorCh())
 	for _, step := range s.steps {
 		switch step.(type) {
+		case processor.MapFuncSpec:
+			mf := step.(processor.MapFuncSpec)
+			mOut := mf.Body(s.inChan, mf.ArgF)
+			s.inChan = mOut
 		case processor.FilterFuncSpec:
 			ff := step.(processor.FilterFuncSpec)
 			fOut := ff.Body(s.inChan, ff.Predicate)
 			s.inChan = fOut
 		case processor.ProcFuncSpec:
-			step := step.(processor.ProcFuncSpec).Body
-			pOut := step(s.inChan)
+			pf := step.(processor.ProcFuncSpec).Body
+			pOut := pf(s.inChan)
 			s.inChan = pOut
 		case sink.Collector:
 			c := step.(sink.Collector)

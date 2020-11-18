@@ -9,12 +9,11 @@ import (
 )
 
 type httpSource struct {
-	urls     []string
-	out      chan interface{}
-	onNext   chan bool
-	done     chan bool
-	runEvery time.Duration
-	error    chan error
+	urls   []string
+	out    chan interface{}
+	onNext chan bool
+	done   chan bool
+	error  chan error
 }
 
 func (h httpSource) ErrorCh() <-chan error {
@@ -27,12 +26,11 @@ func (h httpSource) OnNextCh() chan bool {
 
 func Http(urls []string) *httpSource {
 	return &httpSource{
-		urls:     urls,
-		out:      make(chan interface{}, 20),
-		onNext:   make(chan bool),
-		done:     make(chan bool),
-		runEvery: 1 * time.Second,
-		error:    make(chan error),
+		urls:   urls,
+		out:    make(chan interface{}, 20),
+		onNext: make(chan bool),
+		done:   make(chan bool),
+		error:  make(chan error),
 	}
 }
 
@@ -64,7 +62,7 @@ func (h httpSource) Emit() {
 			run = false
 		// only emit on signal from consumer
 		case <-h.onNext:
-			fmt.Println("demand signal")
+			h.error <- errors.New(fmt.Sprintf("source => got demand signal"))
 			for _, u := range h.urls {
 				request(u)
 			}
