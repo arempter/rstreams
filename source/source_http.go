@@ -1,11 +1,11 @@
 package source
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"time"
 )
 
 type httpSource struct {

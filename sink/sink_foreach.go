@@ -2,33 +2,42 @@ package sink
 
 import (
 	"fmt"
-	"reflect"
 )
 
 type foreach struct {
+	onNext chan bool
+	error  chan error
+}
+
+func (f *foreach) ErrorCh() <-chan error {
+	return f.error
 }
 
 func Foreach() *foreach {
-	return &foreach{}
+	return &foreach{
+		error: make(chan error),
+	}
 }
 
-func (f foreach) SetOnNextCh(in chan bool) {
-	panic("not supported")
+func (f *foreach) SetOnNextCh(c chan bool) {
+	f.onNext = c
 }
 
-func (f foreach) HasBackpressure() bool {
-	return false
-}
-
-func (f foreach) Receive(in <-chan interface{}) {
-	for e := range in {
-		switch e.(type) {
-		case string:
-			fmt.Println(e)
-		case []byte:
-			fmt.Print(string(e.([]byte)))
-		default:
-			fmt.Println("got other type", reflect.TypeOf(e), e)
+func (f *foreach) Receive(in <-chan interface{}) {
+	run := true
+	for run == true {
+		select {
+		case f.onNext <- true:
+		case e, open := <-in:
+			if !open {
+				run = false
+			}
+			switch e.(type) {
+			case string:
+				fmt.Println(e)
+			case []byte:
+				fmt.Print(string(e.([]byte)))
+			}
 		}
 	}
 }

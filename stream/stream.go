@@ -1,7 +1,6 @@
 package stream
 
 import (
-	"fmt"
 	"log"
 	"rstreams/processor"
 	"rstreams/sink"
@@ -25,14 +24,13 @@ type stream struct {
 	steps  []interface{}
 	inChan <-chan interface{}
 	done   chan bool
-	error  chan error
+	errors []<-chan error
 }
 
 func FromSource(source source.Source) *stream {
 	return &stream{
 		source: source,
 		done:   make(chan bool),
-		error:  make(chan error),
 	}
 }
 func (s *stream) Filter(f processor.FilterFunc, predicate func(interface{}) bool) *stream {
@@ -60,6 +58,7 @@ func (s *stream) Run() {
 func (s *stream) runnableDAG() {
 	go s.source.Emit()
 	s.inChan = s.source.GetOutput()
+	s.errors = append(s.errors, s.source.ErrorCh())
 	for _, step := range s.steps {
 		switch step.(type) {
 		case processor.FilterFuncSpec:
@@ -72,10 +71,8 @@ func (s *stream) runnableDAG() {
 			s.inChan = pOut
 		case sink.Collector:
 			c := step.(sink.Collector)
-			if c.HasBackpressure() {
-				fmt.Println("got BPS connecting ch")
-				c.SetOnNextCh(s.source.OnNextCh())
-			}
+			c.SetOnNextCh(s.source.OnNextCh())
+			s.errors = append(s.errors, c.ErrorCh())
 			c.Receive(s.inChan)
 		default:
 			panic("Unsupported step type")
@@ -83,19 +80,17 @@ func (s *stream) runnableDAG() {
 	}
 }
 
-// stop source for now...
 func (s *stream) Stop() {
-	fmt.Println("Sending stop source signal...")
 	s.source.Stop()
 }
 
 func (s *stream) WireTap() {
-	go func() {
-		for se := range s.source.ErrorCh() {
-			s.error <- se
+	readErr := func(errIn <-chan error) {
+		for e := range errIn {
+			log.Println("DEBUG", e)
 		}
-	}()
-	for e := range s.error {
-		log.Println("DEBUG", e)
+	}
+	for _, c := range s.errors {
+		go readErr(c)
 	}
 }

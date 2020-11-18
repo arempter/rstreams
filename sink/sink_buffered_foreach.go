@@ -2,6 +2,7 @@ package sink
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"math/rand"
 	"os"
@@ -11,11 +12,17 @@ import (
 type foreachBP struct {
 	bufSize int
 	onNext  chan bool
+	error   chan error
+}
+
+func (f *foreachBP) ErrorCh() <-chan error {
+	return f.error
 }
 
 func BufferedForeach() *foreachBP {
 	return &foreachBP{
 		bufSize: 256,
+		error:   make(chan error),
 	}
 }
 
@@ -23,11 +30,7 @@ func (f *foreachBP) SetOnNextCh(c chan bool) {
 	f.onNext = c
 }
 
-func (f foreachBP) HasBackpressure() bool {
-	return true
-}
-
-func (f *foreachBP) Receive(in <-chan interface{}) {
+func (f foreachBP) Receive(in <-chan interface{}) {
 	var buffer bytes.Buffer
 
 	consume := func(bs []byte) {
@@ -40,7 +43,7 @@ func (f *foreachBP) Receive(in <-chan interface{}) {
 	// simulate slow processing
 	process := func() {
 		if buffer.Len() > int(float32(f.bufSize)*0.6) {
-			fmt.Println("not empty, reading buffer")
+			f.error <- errors.New(fmt.Sprintf("sink => buffer not empty, reading..."))
 			time.Sleep(time.Duration(rand.Intn(2)) * time.Second)
 			buffer.WriteTo(os.Stdout)
 		}

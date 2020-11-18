@@ -20,9 +20,14 @@ func main() {
 		return true
 	}
 
+	//go stream.WireTap()
+
 	stream.
 		Filter(processor.Filter, containsStringFunc).
 		Via(processor.ToUpper()).
 		To(sink.Foreach()).
 		Run()
+
+	stream.Stop()
+
 }
