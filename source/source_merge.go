@@ -1,33 +1,47 @@
 package source
 
 type merge struct {
-	out     chan interface{}
-	sources []Source
+	out       chan interface{}
+	sources   []Source
+	onNext    chan bool
+	done      chan bool
+	error     chan error
+	consumers []chan<- bool
 }
 
-func (m merge) OnNextCh() chan bool {
-	panic("not supported")
+func (m *merge) OnNextCh() chan bool {
+	return m.onNext
 }
 
-func (m merge) ErrorCh() <-chan error {
-	panic("not supported")
+func (m *merge) ErrorCh() <-chan error {
+	return m.error
 }
 
-func (m merge) GetOutput() <-chan interface{} {
+func (m *merge) GetOutput() <-chan interface{} {
 	return m.out
 }
 
-func (m merge) Emit() {
-	//todo: add sync.WaitGroup
-	output := func(in <-chan interface{}) {
-		for e := range in {
-			m.out <- e
+func (m *merge) Emit() {
+	processSource := func(in <-chan interface{}, onNext chan bool) {
+		run := true
+		for run == true {
+			select {
+			case <-m.done:
+				run = false
+			case onNext <- true:
+			case e, open := <-in:
+				if !open {
+					run = false
+				}
+				m.out <- e
+			}
 		}
 	}
 
+	defer close(m.out)
 	for _, s := range m.sources {
 		go s.Emit()
-		go output(s.GetOutput())
+		processSource(s.GetOutput(), s.OnNextCh())
 	}
 }
 
@@ -35,9 +49,16 @@ func (merge) Stop() {
 	panic("todo")
 }
 
+func (m *merge) Subscribe(consCh chan<- bool) {
+	m.consumers = append(m.consumers, consCh)
+}
+
 func MergeSources(sources ...Source) *merge {
 	return &merge{
 		out:     make(chan interface{}),
 		sources: sources,
+		onNext:  make(chan bool),
+		done:    make(chan bool),
+		error:   make(chan error),
 	}
 }

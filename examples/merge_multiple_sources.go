@@ -1,13 +1,11 @@
 package main
 
 import (
-	"os"
 	"rstreams/processor"
 	"rstreams/sink"
 	"rstreams/source"
 	"rstreams/stream"
 	"strings"
-	"time"
 )
 
 func main() {
@@ -20,17 +18,16 @@ func main() {
 
 	stream := stream.FromSource(source.MergeSources(wordsSource, wordsSource1, wordsSource2))
 
-	go func() {
-		time.Sleep(3 * time.Second)
-		stream.Stop()
-		os.Exit(0)
-	}()
-
 	containsStringFunc := func(i interface{}) bool {
-		if !strings.Contains(strings.ToLower(i.(string)), "s") {
+		switch i.(type) {
+		case string:
+			if !strings.Contains(strings.ToLower(i.(string)), "s") {
+				return false
+			}
+			return true
+		default:
 			return false
 		}
-		return true
 	}
 
 	stream.
