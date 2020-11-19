@@ -6,4 +6,5 @@ type Source interface {
 	Emit()
 	Stop()
 	ErrorCh() <-chan error
+	Subscribe(consCh chan<- bool)
 }

@@ -9,11 +9,12 @@ import (
 )
 
 type httpSource struct {
-	urls   []string
-	out    chan interface{}
-	onNext chan bool
-	done   chan bool
-	error  chan error
+	urls      []string
+	out       chan interface{}
+	onNext    chan bool
+	done      chan bool
+	error     chan error
+	consumers []chan<- bool
 }
 
 func (h httpSource) ErrorCh() <-chan error {
@@ -73,4 +74,8 @@ func (h httpSource) Emit() {
 func (h httpSource) Stop() {
 	log.Println("sending stop signal to http source...")
 	h.done <- true
+}
+
+func (h *httpSource) Subscribe(consCh chan<- bool) {
+	h.consumers = append(h.consumers, consCh)
 }

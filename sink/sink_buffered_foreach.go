@@ -13,16 +13,22 @@ type foreachBP struct {
 	bufSize int
 	onNext  chan bool
 	error   chan error
+	done    chan bool
 }
 
 func (f *foreachBP) ErrorCh() <-chan error {
 	return f.error
 }
 
+func (f *foreachBP) DoneCh() chan<- bool {
+	return f.done
+}
+
 func BufferedForeach() *foreachBP {
 	return &foreachBP{
 		bufSize: 256,
 		error:   make(chan error),
+		done:    make(chan bool),
 	}
 }
 

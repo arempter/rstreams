@@ -85,6 +85,7 @@ func (s *stream) runnableDAG() {
 			s.inChan = pOut
 		case sink.Collector:
 			c := step.(sink.Collector)
+			s.source.Subscribe(c.DoneCh())
 			c.SetOnNextCh(s.source.OnNextCh())
 			s.errors = append(s.errors, c.ErrorCh())
 			c.Receive(s.inChan)
@@ -98,6 +99,7 @@ func (s *stream) Stop() {
 	s.source.Stop()
 }
 
+// todo: change to multiplex and accept f to process E
 func (s *stream) WireTap() {
 	readErr := func(errIn <-chan error) {
 		for e := range errIn {

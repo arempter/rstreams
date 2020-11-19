@@ -32,6 +32,4 @@ func main() {
 		To(sink.Foreach()).
 		Run()
 
-	stream.Stop()
-
 }
