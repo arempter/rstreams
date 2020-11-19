@@ -11,7 +11,18 @@ type kafkaAvroSource struct {
 	topics    []string
 	schema    string
 	out       chan interface{}
+	onNext    chan bool
 	done      chan bool
+	error     chan error
+	consumers []chan<- bool
+}
+
+func (k *kafkaAvroSource) OnNextCh() chan bool {
+	return k.onNext
+}
+
+func (k *kafkaAvroSource) ErrorCh() <-chan error {
+	return k.error
 }
 
 func (k kafkaAvroSource) GetOutput() <-chan interface{} {
@@ -67,12 +78,18 @@ func (k *kafkaAvroSource) Emit() {
 	}
 }
 
+func (k *kafkaAvroSource) Subscribe(consCh chan<- bool) {
+	k.consumers = append(k.consumers, consCh)
+}
+
 func KafkaAvro(kafkaConf *kafka.ConfigMap, topics []string, schema string) *kafkaAvroSource {
 	return &kafkaAvroSource{
 		kafkaConf: kafkaConf,
 		topics:    topics,
 		schema:    schema,
 		out:       make(chan interface{}, 5),
+		onNext:    make(chan bool),
 		done:      make(chan bool, 1),
+		error:     make(chan error),
 	}
 }

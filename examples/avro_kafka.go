@@ -31,8 +31,8 @@ func main() {
 		"session.timeout.ms":    6000,
 		"auto.offset.reset":     "earliest",
 	}
-	hasValueFunc := func(s string) bool {
-		if !strings.Contains(strings.ToLower(s), "1.") {
+	hasValueFunc := func(s interface{}) bool {
+		if !strings.Contains(strings.ToLower(s.(string)), "1.") {
 			return false
 		}
 		return true
@@ -41,8 +41,8 @@ func main() {
 	stream := stream.FromSource(source.KafkaAvro(kc, []string{"reactiveLab"}, schema))
 	stream.
 		Filter(processor.Filter, hasValueFunc).
-		Via(decodeToNative).
-		To(sink.Foreach).
+		Via(processor.ProcFuncSpec{Body: decodeToNative}).
+		To(sink.Foreach()).
 		Run()
 
 	// test stream stop
