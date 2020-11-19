@@ -31,7 +31,7 @@ func main() {
 	}
 
 	stream.
-		Filter(processor.Filter, containsStringFunc).
+		Filter(containsStringFunc).
 		Via(processor.ToUpper()).
 		To(sink.Foreach()).
 		Run()

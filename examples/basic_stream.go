@@ -26,8 +26,8 @@ func main() {
 	//go stream.WireTap()
 
 	stream.
-		Filter(processor.Filter, containsStringFunc).
-		Map(processor.Map, addOK).
+		Filter(containsStringFunc).
+		Map(addOK).
 		Via(processor.ToUpper()).
 		To(sink.Foreach()).
 		Run()

@@ -12,8 +12,8 @@ import (
 
 type Stream interface {
 	Via(f processor.ProcFuncSpec) *stream
-	Filter(f processor.FilterFunc, c func(string) bool) *stream //todo: move to procFunc?
-	Map(f processor.MapFunc, p processor.MapF) *stream
+	Filter(c func(string) bool) *stream
+	Map(p processor.MapF) *stream
 	To(f sink.Collector) *stream
 	Run()
 	Stop()
@@ -35,17 +35,17 @@ func FromSource(source source.Source) *stream {
 	}
 }
 
-func (s *stream) Map(f processor.MapFunc, predicate processor.MapF) *stream {
+func (s *stream) Map(predicate processor.MapF) *stream {
 	s.steps = append(s.steps, processor.MapFuncSpec{
-		Body: f,
+		Body: processor.Map,
 		ArgF: predicate,
 	})
 	return s
 }
 
-func (s *stream) Filter(f processor.FilterFunc, predicate processor.Cond) *stream {
+func (s *stream) Filter(predicate processor.Cond) *stream {
 	s.steps = append(s.steps, processor.FilterFuncSpec{
-		Body:      f,
+		Body:      processor.Filter,
 		Predicate: predicate,
 	})
 	return s
