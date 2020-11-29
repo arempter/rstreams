@@ -18,21 +18,17 @@ func main() {
 
 	stream := stream.FromSource(source.MergeSources(wordsSource, wordsSource1, wordsSource2))
 
-	containsStringFunc := func(i interface{}) bool {
-		switch i.(type) {
-		case string:
-			if !strings.Contains(strings.ToLower(i.(string)), "s") {
-				return false
-			}
-			return true
-		default:
+	containsStringFunc := func(e string) bool {
+		if !strings.Contains(strings.ToLower(e), "s") {
 			return false
 		}
+		return true
 	}
 
 	stream.
+		Map(processor.ToString).
 		Filter(containsStringFunc).
-		Via(processor.ToUpper()).
+		Map(processor.ToUpper).
 		To(sink.Foreach()).
 		Run()
 }

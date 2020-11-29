@@ -3,15 +3,19 @@ package source
 import (
 	"errors"
 	"fmt"
+	"reflect"
+	"rstreams/util"
+	"time"
 )
 
 type sliceSource struct {
-	in        []string
-	out       chan interface{}
-	onNext    chan bool
-	done      chan bool
-	error     chan error
-	consumers []chan<- bool
+	in           interface{}
+	out          chan interface{}
+	onNext       chan bool
+	done         chan bool
+	error        chan error
+	consumers    []chan<- bool
+	drainTimeout time.Duration
 }
 
 func (s *sliceSource) OnNextCh() chan bool {
@@ -30,13 +34,19 @@ func (s sliceSource) Stop() {
 
 }
 
-func Slice(in []string) *sliceSource {
+// Slice Source accepts any slice type. Panics on any other type
+func Slice(i interface{}) *sliceSource {
+	iVal := reflect.ValueOf(i)
+	if err := util.IsSlice(iVal); err != nil {
+		panic(err.Error())
+	}
 	return &sliceSource{
-		in:     in,
-		out:    make(chan interface{}, 5),
-		onNext: make(chan bool),
-		done:   make(chan bool),
-		error:  make(chan error),
+		in:           i,
+		out:          make(chan interface{}),
+		onNext:       make(chan bool),
+		done:         make(chan bool),
+		error:        make(chan error),
+		drainTimeout: 30 * time.Millisecond,
 	}
 }
 
@@ -45,6 +55,7 @@ func (s *sliceSource) GetOutput() <-chan interface{} {
 }
 
 func (s *sliceSource) Emit() {
+	iVal := reflect.ValueOf(s.in)
 	run := true
 	defer close(s.out)
 	for run == true {
@@ -54,11 +65,11 @@ func (s *sliceSource) Emit() {
 			run = false
 		case <-s.onNext:
 			s.sendToErr("source => got demand signal")
-			if len(s.in) > 0 {
-				s.out <- s.in[0]
-				s.in = s.in[1:]
+			if iVal.Len() > 0 {
+				s.out <- iVal.Index(0).Interface()
+				iVal = iVal.Slice(1, iVal.Len())
 			}
-			if len(s.in) == 0 {
+			if iVal.Len() == 0 {
 				s.sendToErr("source => no more elements")
 				s.notifyConsumers()
 				run = false
@@ -75,6 +86,8 @@ func (s *sliceSource) sendToErr(e string) {
 
 func (s *sliceSource) notifyConsumers() {
 	if len(s.consumers) > 0 {
+		// some time for consumer to get last element
+		time.Sleep(s.drainTimeout)
 		for _, done := range s.consumers {
 			go func() {
 				done <- true

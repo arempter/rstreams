@@ -41,7 +41,7 @@ func main() {
 	stream := stream.FromSource(source.KafkaAvro(kc, []string{"reactiveLab"}, schema))
 	stream.
 		Filter(hasValueFunc).
-		Via(processor.ProcFuncSpec{Body: decodeToNative}).
+		Via(processor.StepFuncSpec{Body: decodeToNative}).
 		To(sink.Foreach()).
 		Run()
 

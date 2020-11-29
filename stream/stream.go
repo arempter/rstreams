@@ -7,13 +7,17 @@ import (
 	"rstreams/source"
 )
 
-//todo: logging && error
-//todo: parallel
+//todo:
+// logging && error (err type verb, debug etc)
+// parallel
+// source freq
+// restart source on err
+// align buffer size for all components
+// rework wireTap
 
 type Stream interface {
-	Via(f processor.ProcFuncSpec) *stream
-	Filter(c func(string) bool) *stream
-	Map(p processor.MapF) *stream
+	Filter(c interface{}) *stream
+	Map(p interface{}) *stream
 	To(f sink.Collector) *stream
 	Run()
 	Stop()
@@ -35,16 +39,16 @@ func FromSource(source source.Source) *stream {
 	}
 }
 
-func (s *stream) Map(predicate processor.MapF) *stream {
-	s.steps = append(s.steps, processor.MapFuncSpec{
-		Body: processor.Map,
-		ArgF: predicate,
+func (s *stream) Map(predicate interface{}) *stream {
+	s.steps = append(s.steps, processor.StepFuncWithPredicate{
+		Body:      processor.Map,
+		Predicate: predicate,
 	})
 	return s
 }
 
-func (s *stream) Filter(predicate processor.Cond) *stream {
-	s.steps = append(s.steps, processor.FilterFuncSpec{
+func (s *stream) Filter(predicate interface{}) *stream {
+	s.steps = append(s.steps, processor.StepFuncWithPredicate{
 		Body:      processor.Filter,
 		Predicate: predicate,
 	})
@@ -52,11 +56,6 @@ func (s *stream) Filter(predicate processor.Cond) *stream {
 }
 
 func (s *stream) To(f sink.Collector) *stream {
-	s.steps = append(s.steps, f)
-	return s
-}
-
-func (s *stream) Via(f processor.ProcFuncSpec) *stream {
 	s.steps = append(s.steps, f)
 	return s
 }
@@ -71,16 +70,12 @@ func (s *stream) runnableDAG() {
 	s.errors = append(s.errors, s.source.ErrorCh())
 	for _, step := range s.steps {
 		switch step.(type) {
-		case processor.MapFuncSpec:
-			mf := step.(processor.MapFuncSpec)
-			mOut := mf.Body(s.inChan, mf.ArgF)
+		case processor.StepFuncWithPredicate:
+			fSpec := step.(processor.StepFuncWithPredicate)
+			mOut := fSpec.Body(s.inChan, fSpec.Predicate)
 			s.inChan = mOut
-		case processor.FilterFuncSpec:
-			ff := step.(processor.FilterFuncSpec)
-			fOut := ff.Body(s.inChan, ff.Predicate)
-			s.inChan = fOut
-		case processor.ProcFuncSpec:
-			pf := step.(processor.ProcFuncSpec).Body
+		case processor.StepFuncSpec:
+			pf := step.(processor.StepFuncSpec).Body
 			pOut := pf(s.inChan)
 			s.inChan = pOut
 		case sink.Collector:

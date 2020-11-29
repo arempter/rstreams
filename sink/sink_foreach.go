@@ -43,6 +43,8 @@ func (f *foreach) Receive(in <-chan interface{}) {
 			switch e.(type) {
 			case string:
 				fmt.Println(e)
+			case int:
+				fmt.Println(e)
 			case []byte:
 				fmt.Print(string(e.([]byte)))
 			}

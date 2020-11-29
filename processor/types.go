@@ -1,21 +1,13 @@
 package processor
 
-type MapF func(interface{}) interface{}
-type MapFunc func(<-chan interface{}, MapF) <-chan interface{}
-type MapFuncSpec struct {
-	Body MapFunc
-	ArgF MapF
+type StepFuncPredicate func(<-chan interface{}, interface{}) <-chan interface{}
+type StepFuncWithPredicate struct {
+	Body      StepFuncPredicate
+	Predicate interface{}
 }
 
-type ProcFunc func(<-chan interface{}) <-chan interface{}
-type ProcFuncSpec struct {
-	Body ProcFunc
+type StepFunc func(<-chan interface{}) <-chan interface{}
+type StepFuncSpec struct {
+	Body StepFunc
 	ArgF interface{}
-}
-
-type Cond func(interface{}) bool
-type FilterFunc func(<-chan interface{}, Cond) <-chan interface{}
-type FilterFuncSpec struct {
-	Body      FilterFunc
-	Predicate Cond
 }
