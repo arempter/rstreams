@@ -2,10 +2,11 @@ package processor
 
 import (
 	"reflect"
+	"rstreams/source"
 	"rstreams/util"
 )
 
-func Map(in <-chan interface{}, predicate interface{}, out chan interface{}) {
+func Map(in <-chan source.Element, predicate interface{}, out chan source.Element) {
 	if err := util.IsMapFunc(predicate); err != nil {
 		panic(err.Error())
 	}
@@ -16,9 +17,12 @@ func Map(in <-chan interface{}, predicate interface{}, out chan interface{}) {
 			}
 		}()
 		for e := range in {
-			if e != nil {
-				eVal := reflect.ValueOf(e)
-				out <- reflect.ValueOf(predicate).Call([]reflect.Value{eVal})[0].Interface()
+			if e.Payload != nil {
+				eVal := reflect.ValueOf(e.Payload)
+				out <- source.Element{
+					Payload:   reflect.ValueOf(predicate).Call([]reflect.Value{eVal})[0].Interface(),
+					Timestamp: e.Timestamp,
+				}
 			}
 		}
 		//close(out)

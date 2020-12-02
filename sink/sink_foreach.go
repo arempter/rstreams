@@ -2,6 +2,7 @@ package sink
 
 import (
 	"fmt"
+	"rstreams/source"
 )
 
 type foreach struct {
@@ -29,7 +30,7 @@ func (f *foreach) SetOnNextCh(c chan bool) {
 	f.onNext = c
 }
 
-func (f *foreach) Receive(in <-chan interface{}) {
+func (f *foreach) Receive(in <-chan source.Element) {
 	run := true
 	for run == true {
 		select {
@@ -40,13 +41,13 @@ func (f *foreach) Receive(in <-chan interface{}) {
 			if !open {
 				run = false
 			}
-			switch e.(type) {
+			switch e.Payload.(type) {
 			case string:
-				fmt.Println(e)
+				fmt.Println(e.Payload)
 			case int:
-				fmt.Println(e)
+				fmt.Println(e.Payload)
 			case []byte:
-				fmt.Print(string(e.([]byte)))
+				fmt.Print(string(e.Payload.([]byte)))
 			}
 		}
 	}

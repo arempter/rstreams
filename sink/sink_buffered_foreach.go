@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"rstreams/source"
 	"time"
 )
 
@@ -36,7 +37,7 @@ func (f *foreachBP) SetOnNextCh(c chan bool) {
 	f.onNext = c
 }
 
-func (f foreachBP) Receive(in <-chan interface{}) {
+func (f foreachBP) Receive(in <-chan source.Element) {
 	var buffer bytes.Buffer
 
 	consume := func(bs []byte) {
@@ -57,9 +58,9 @@ func (f foreachBP) Receive(in <-chan interface{}) {
 
 	f.onNext <- true
 	for e := range in {
-		switch e.(type) {
+		switch e.Payload.(type) {
 		case []byte:
-			bs := e.([]byte)
+			bs := e.Payload.([]byte)
 			go consume(bs)
 			process()
 		}

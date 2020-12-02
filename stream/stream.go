@@ -10,7 +10,6 @@ import (
 //todo:
 // logging && error (err type verb, debug etc)
 // source freq
-// timestamp of event
 // parallel - grouped
 // restart source on err
 // ToMat
@@ -29,7 +28,7 @@ type Stream interface {
 type stream struct {
 	source source.Source
 	steps  []interface{}
-	inChan <-chan interface{}
+	inChan <-chan source.Element
 	done   chan bool
 	errors []<-chan error
 }
@@ -73,7 +72,7 @@ func (s *stream) runnableDAG() {
 	for _, step := range s.steps {
 		switch step.(type) {
 		case processor.StepFuncWithPredicate:
-			out := make(chan interface{})
+			out := make(chan source.Element)
 			fSpec := step.(processor.StepFuncWithPredicate)
 			fSpec.Body(s.inChan, fSpec.Predicate, out)
 			s.inChan = out

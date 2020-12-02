@@ -10,7 +10,7 @@ import (
 
 type sliceSource struct {
 	in           interface{}
-	out          chan interface{}
+	out          chan Element
 	onNext       chan bool
 	done         chan bool
 	error        chan error
@@ -42,7 +42,7 @@ func Slice(i interface{}) *sliceSource {
 	}
 	return &sliceSource{
 		in:           i,
-		out:          make(chan interface{}),
+		out:          make(chan Element),
 		onNext:       make(chan bool),
 		done:         make(chan bool),
 		error:        make(chan error),
@@ -50,7 +50,7 @@ func Slice(i interface{}) *sliceSource {
 	}
 }
 
-func (s *sliceSource) GetOutput() <-chan interface{} {
+func (s *sliceSource) GetOutput() <-chan Element {
 	return s.out
 }
 
@@ -66,7 +66,10 @@ func (s *sliceSource) Emit() {
 		case <-s.onNext:
 			s.sendToErr("source => got demand signal")
 			if iVal.Len() > 0 {
-				s.out <- iVal.Index(0).Interface()
+				s.out <- Element{
+					Payload:   iVal.Index(0).Interface(),
+					Timestamp: time.Now(),
+				}
 				iVal = iVal.Slice(1, iVal.Len())
 			}
 			if iVal.Len() == 0 {

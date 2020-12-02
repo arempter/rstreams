@@ -4,13 +4,14 @@ import (
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"log"
 	"os"
+	"time"
 )
 
 type kafkaAvroSource struct {
 	kafkaConf *kafka.ConfigMap
 	topics    []string
 	schema    string
-	out       chan interface{}
+	out       chan Element
 	onNext    chan bool
 	done      chan bool
 	error     chan error
@@ -25,7 +26,7 @@ func (k *kafkaAvroSource) ErrorCh() <-chan error {
 	return k.error
 }
 
-func (k kafkaAvroSource) GetOutput() <-chan interface{} {
+func (k kafkaAvroSource) GetOutput() <-chan Element {
 	return k.out
 }
 func (k kafkaAvroSource) Stop() {
@@ -64,7 +65,10 @@ func (k *kafkaAvroSource) Emit() {
 					log.Println("failed to deserialize from avro", err)
 				}
 				go func() {
-					k.out <- e.Value
+					k.out <- Element{
+						Payload:   e.Value,
+						Timestamp: time.Now(),
+					}
 				}()
 			case kafka.Error:
 				if e.Code() == kafka.ErrAllBrokersDown {
@@ -87,7 +91,7 @@ func KafkaAvro(kafkaConf *kafka.ConfigMap, topics []string, schema string) *kafk
 		kafkaConf: kafkaConf,
 		topics:    topics,
 		schema:    schema,
-		out:       make(chan interface{}, 5),
+		out:       make(chan Element),
 		onNext:    make(chan bool),
 		done:      make(chan bool, 1),
 		error:     make(chan error),

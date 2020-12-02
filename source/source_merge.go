@@ -1,7 +1,7 @@
 package source
 
 type merge struct {
-	out       chan interface{}
+	out       chan Element
 	sources   []Source
 	onNext    chan bool
 	done      chan bool
@@ -17,12 +17,12 @@ func (m *merge) ErrorCh() <-chan error {
 	return m.error
 }
 
-func (m *merge) GetOutput() <-chan interface{} {
+func (m *merge) GetOutput() <-chan Element {
 	return m.out
 }
 
 func (m *merge) Emit() {
-	processSource := func(in <-chan interface{}, onNext chan bool) {
+	processSource := func(in <-chan Element, onNext chan bool) {
 		run := true
 		for run == true {
 			select {
@@ -55,7 +55,7 @@ func (m *merge) Subscribe(consCh chan<- bool) {
 
 func MergeSources(sources ...Source) *merge {
 	return &merge{
-		out:     make(chan interface{}),
+		out:     make(chan Element),
 		sources: sources,
 		onNext:  make(chan bool),
 		done:    make(chan bool),

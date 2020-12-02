@@ -6,11 +6,12 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"time"
 )
 
 type httpSource struct {
 	urls      []string
-	out       chan interface{}
+	out       chan Element
 	onNext    chan bool
 	done      chan bool
 	error     chan error
@@ -28,14 +29,14 @@ func (h httpSource) OnNextCh() chan bool {
 func Http(urls []string) *httpSource {
 	return &httpSource{
 		urls:   urls,
-		out:    make(chan interface{}, 20),
+		out:    make(chan Element),
 		onNext: make(chan bool),
 		done:   make(chan bool),
 		error:  make(chan error),
 	}
 }
 
-func (h httpSource) GetOutput() <-chan interface{} {
+func (h httpSource) GetOutput() <-chan Element {
 	return h.out
 }
 
@@ -52,7 +53,10 @@ func (h httpSource) Emit() {
 			log.Println("Failed to read response")
 			return err
 		}
-		h.out <- body
+		h.out <- Element{
+			Payload:   body,
+			Timestamp: time.Now(),
+		}
 		return nil
 	}
 
