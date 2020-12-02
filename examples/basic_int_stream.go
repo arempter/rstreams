@@ -1,6 +1,7 @@
 package main
 
 import (
+	"rstreams/processor"
 	"rstreams/sink"
 	"rstreams/source"
 	"rstreams/stream"
@@ -8,7 +9,7 @@ import (
 
 func main() {
 
-	ints := []int{1, 2, 3, 4, 5, 7, 9, 15, 20}
+	ints := []string{"1", "2", "three", "4", "5", "six", "7"}
 
 	addOne := func(e int) int { return e + 1 }
 
@@ -20,6 +21,7 @@ func main() {
 	}
 
 	stream.FromSource(source.Slice(ints)).
+		Map(processor.ToInt).
 		Map(addOne).
 		Filter(even).
 		To(sink.Foreach()).

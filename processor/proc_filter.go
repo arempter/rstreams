@@ -5,11 +5,10 @@ import (
 	"rstreams/util"
 )
 
-func Filter(in <-chan interface{}, predicate interface{}) <-chan interface{} {
+func Filter(in <-chan interface{}, predicate interface{}, out chan interface{}) {
 	if err := util.IsFilterFunc(predicate); err != nil {
 		panic(err.Error())
 	}
-	out := make(chan interface{})
 	go func() {
 		for e := range in {
 			if e != nil {
@@ -19,7 +18,5 @@ func Filter(in <-chan interface{}, predicate interface{}) <-chan interface{} {
 				}
 			}
 		}
-		close(out)
 	}()
-	return out
 }

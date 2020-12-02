@@ -9,9 +9,11 @@ import (
 
 //todo:
 // logging && error (err type verb, debug etc)
-// parallel
 // source freq
+// timestamp of event
+// parallel - grouped
 // restart source on err
+// ToMat
 // align buffer size for all components
 // rework wireTap
 
@@ -71,9 +73,10 @@ func (s *stream) runnableDAG() {
 	for _, step := range s.steps {
 		switch step.(type) {
 		case processor.StepFuncWithPredicate:
+			out := make(chan interface{})
 			fSpec := step.(processor.StepFuncWithPredicate)
-			mOut := fSpec.Body(s.inChan, fSpec.Predicate)
-			s.inChan = mOut
+			fSpec.Body(s.inChan, fSpec.Predicate, out)
+			s.inChan = out
 		case processor.StepFuncSpec:
 			pf := step.(processor.StepFuncSpec).Body
 			pOut := pf(s.inChan)

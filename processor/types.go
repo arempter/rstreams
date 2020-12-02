@@ -1,6 +1,6 @@
 package processor
 
-type StepFuncPredicate func(<-chan interface{}, interface{}) <-chan interface{}
+type StepFuncPredicate func(<-chan interface{}, interface{}, chan interface{})
 type StepFuncWithPredicate struct {
 	Body      StepFuncPredicate
 	Predicate interface{}

@@ -5,19 +5,22 @@ import (
 	"rstreams/util"
 )
 
-func Map(in <-chan interface{}, predicate interface{}) <-chan interface{} {
+func Map(in <-chan interface{}, predicate interface{}, out chan interface{}) {
 	if err := util.IsMapFunc(predicate); err != nil {
 		panic(err.Error())
 	}
-	out := make(chan interface{})
 	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				Map(in, predicate, out)
+			}
+		}()
 		for e := range in {
 			if e != nil {
 				eVal := reflect.ValueOf(e)
 				out <- reflect.ValueOf(predicate).Call([]reflect.Value{eVal})[0].Interface()
 			}
 		}
-		close(out)
+		//close(out)
 	}()
-	return out
 }
