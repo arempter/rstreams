@@ -5,11 +5,12 @@ tests on streams processing based on Go channels
 ### usage
 
 ```
-stream.
-       Filter(processors.Filter, containsStringFunc).
-       Via(processors.ToUpper).
-       To(sinks.ForeachSink).
-    Run()
+stream.FromSource(source.Slice(ints)).
+		Map(processor.ToInt).
+		Map(addOne).
+		Filter(even).
+		To(sink.Foreach()).
+		Run()
 ```
 
 * A basic stream howto
