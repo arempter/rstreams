@@ -11,6 +11,8 @@ type Source interface {
 	Stop()
 	ErrorCh() <-chan error
 	Subscribe(consCh chan<- bool)
+	VerboseON()
+	VerboseOFF()
 }
 
 type Element struct {

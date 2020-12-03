@@ -14,7 +14,6 @@ import (
 // restart source on err
 // ToMat
 // align buffer size for all components
-// rework wireTap
 
 type Stream interface {
 	Filter(c interface{}) *stream
@@ -98,6 +97,7 @@ func (s *stream) Stop() {
 
 // todo: change to multiplex and accept f to process E
 func (s *stream) WireTap() {
+	s.source.VerboseON()
 	readErr := func(errIn <-chan error) {
 		for e := range errIn {
 			log.Println("DEBUG", e)

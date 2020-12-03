@@ -16,31 +16,41 @@ type httpSource struct {
 	done      chan bool
 	error     chan error
 	consumers []chan<- bool
+	Verbose   bool
 }
 
-func (h httpSource) ErrorCh() <-chan error {
+func (h *httpSource) ErrorCh() <-chan error {
 	return h.error
 }
 
-func (h httpSource) OnNextCh() chan bool {
+func (h *httpSource) OnNextCh() chan bool {
 	return h.onNext
+}
+
+func (h *httpSource) VerboseON() {
+	h.Verbose = true
+}
+
+func (h *httpSource) VerboseOFF() {
+	h.Verbose = false
 }
 
 func Http(urls []string) *httpSource {
 	return &httpSource{
-		urls:   urls,
-		out:    make(chan Element),
-		onNext: make(chan bool),
-		done:   make(chan bool),
-		error:  make(chan error),
+		urls:    urls,
+		out:     make(chan Element),
+		onNext:  make(chan bool),
+		done:    make(chan bool),
+		error:   make(chan error),
+		Verbose: false,
 	}
 }
 
-func (h httpSource) GetOutput() <-chan Element {
+func (h *httpSource) GetOutput() <-chan Element {
 	return h.out
 }
 
-func (h httpSource) Emit() {
+func (h *httpSource) Emit() {
 	request := func(url string) error {
 		resp, err := http.Get(url)
 		if err != nil {
@@ -67,7 +77,7 @@ func (h httpSource) Emit() {
 			run = false
 		// only emit on signal from consumer
 		case <-h.onNext:
-			h.error <- errors.New(fmt.Sprintf("source => got demand signal"))
+			h.sendToErr("source => got demand signal")
 			for _, u := range h.urls {
 				request(u)
 			}
@@ -82,4 +92,10 @@ func (h httpSource) Stop() {
 
 func (h *httpSource) Subscribe(consCh chan<- bool) {
 	h.consumers = append(h.consumers, consCh)
+}
+
+func (h *httpSource) sendToErr(e string) {
+	if h.Verbose {
+		h.error <- errors.New(fmt.Sprintf(e))
+	}
 }

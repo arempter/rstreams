@@ -16,6 +16,7 @@ type sliceSource struct {
 	error        chan error
 	consumers    []chan<- bool
 	drainTimeout time.Duration
+	Verbose      bool
 }
 
 func (s *sliceSource) OnNextCh() chan bool {
@@ -31,7 +32,14 @@ func (s sliceSource) Stop() {
 		defer close(s.error)
 		s.done <- true
 	}()
+}
 
+func (s *sliceSource) VerboseON() {
+	s.Verbose = true
+}
+
+func (s *sliceSource) VerboseOFF() {
+	s.Verbose = false
 }
 
 // Slice Source accepts any slice type. Panics on any other type
@@ -47,6 +55,7 @@ func Slice(i interface{}) *sliceSource {
 		done:         make(chan bool),
 		error:        make(chan error),
 		drainTimeout: 30 * time.Millisecond,
+		Verbose:      false,
 	}
 }
 
@@ -82,9 +91,9 @@ func (s *sliceSource) Emit() {
 }
 
 func (s *sliceSource) sendToErr(e string) {
-	go func() {
+	if s.Verbose {
 		s.error <- errors.New(fmt.Sprintf(e))
-	}()
+	}
 }
 
 func (s *sliceSource) notifyConsumers() {

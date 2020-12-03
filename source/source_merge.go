@@ -7,6 +7,7 @@ type merge struct {
 	done      chan bool
 	error     chan error
 	consumers []chan<- bool
+	Verbose   bool
 }
 
 func (m *merge) OnNextCh() chan bool {
@@ -19,6 +20,14 @@ func (m *merge) ErrorCh() <-chan error {
 
 func (m *merge) GetOutput() <-chan Element {
 	return m.out
+}
+
+func (m *merge) VerboseON() {
+	m.Verbose = true
+}
+
+func (m *merge) VerboseOFF() {
+	m.Verbose = false
 }
 
 func (m *merge) Emit() {
@@ -45,8 +54,11 @@ func (m *merge) Emit() {
 	}
 }
 
-func (merge) Stop() {
-	panic("todo")
+func (m *merge) Stop() {
+	go func() {
+		defer close(m.error)
+		m.done <- true
+	}()
 }
 
 func (m *merge) Subscribe(consCh chan<- bool) {
@@ -60,5 +72,6 @@ func MergeSources(sources ...Source) *merge {
 		onNext:  make(chan bool),
 		done:    make(chan bool),
 		error:   make(chan error),
+		Verbose: false,
 	}
 }
