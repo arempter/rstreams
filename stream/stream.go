@@ -5,6 +5,7 @@ import (
 	"rstreams/processor"
 	"rstreams/sink"
 	"rstreams/source"
+	"time"
 )
 
 //todo:
@@ -17,7 +18,7 @@ type Stream interface {
 	Filter(c interface{}) *stream
 	Map(p interface{}) *stream
 	To(f sink.Collector) *stream
-	Count() *stream
+	CountBy(windowSize time.Duration) *stream
 	Run()
 	Stop()
 	WireTap()
@@ -63,9 +64,10 @@ func (s *stream) Filter(predicate interface{}) *stream {
 	return s
 }
 
-func (s *stream) Count() *stream {
+func (s *stream) CountBy(windowSize time.Duration) *stream {
 	s.steps = append(s.steps, processor.StepFuncSpec{
 		Body: processor.Counter,
+		ArgF: windowSize,
 	})
 	return s
 }
@@ -96,8 +98,8 @@ func (s *stream) runnableDAG() {
 			fSpec.Body(s.inChan, fSpec.Predicate, out, fSpec.Parallel)
 			s.inChan = out
 		case processor.StepFuncSpec:
-			pf := step.(processor.StepFuncSpec).Body
-			pOut := pf(s.inChan)
+			sf := step.(processor.StepFuncSpec)
+			pOut := sf.Body(s.inChan, sf.ArgF)
 			s.inChan = pOut
 		case sink.Collector:
 			c := step.(sink.Collector)

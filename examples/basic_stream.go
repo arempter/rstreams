@@ -1,11 +1,15 @@
 package main
 
 import (
+	"fmt"
+	_ "net/http/pprof"
 	"rstreams/processor"
 	"rstreams/sink"
 	"rstreams/source"
 	"rstreams/stream"
+	"runtime"
 	"strings"
+	"time"
 )
 
 func main() {
@@ -24,6 +28,9 @@ func main() {
 	stream.
 		Filter(containsStringFunc).
 		Map(processor.ToUpper).
+		CountBy(time.Second / 4).
 		To(sink.Foreach()).
 		Run()
+
+	fmt.Println("took", time.Since(start))
 }

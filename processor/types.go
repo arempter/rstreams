@@ -16,7 +16,7 @@ type StepFuncParWithPredicate struct {
 	Parallel  int
 }
 
-type StepFunc func(<-chan source.Element) <-chan source.Element
+type StepFunc func(<-chan source.Element, interface{}) <-chan source.Element
 type StepFuncSpec struct {
 	Body StepFunc
 	ArgF interface{}
