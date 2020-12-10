@@ -12,11 +12,10 @@ func main() {
 
 	stream := stream.FromSource(source.Http(sampleUrls, time.Second/10))
 
-	//go func() {
-	//	time.Sleep(5 * time.Second)
-	//	stream.Stop()
-	//	os.Exit(0)
-	//}()
+	go func() {
+		time.Sleep(5 * time.Second)
+		stream.Stop()
+	}()
 
 	onlyValidJson := func(s interface{}) bool {
 		if len(s.([]byte)) > 5 {

@@ -11,14 +11,15 @@ import (
 )
 
 type httpSource struct {
-	urls       []string
-	out        chan Element
-	done       chan bool
-	error      chan error
-	consumers  []chan<- bool
-	Verbose    bool
-	rate       time.Duration
-	burstLimit int
+	urls         []string
+	out          chan Element
+	done         chan bool
+	error        chan error
+	consumers    []chan<- bool
+	Verbose      bool
+	drainTimeout time.Duration
+	rate         time.Duration
+	burstLimit   int
 }
 
 func (h *httpSource) ErrorCh() <-chan error {
@@ -35,13 +36,14 @@ func (h *httpSource) VerboseOFF() {
 
 func Http(urls []string, rate time.Duration) *httpSource {
 	return &httpSource{
-		urls:       urls,
-		out:        make(chan Element),
-		done:       make(chan bool),
-		error:      make(chan error),
-		Verbose:    false,
-		rate:       rate, // req per second
-		burstLimit: 10,
+		urls:         urls,
+		out:          make(chan Element),
+		done:         make(chan bool),
+		error:        make(chan error),
+		Verbose:      false,
+		drainTimeout: 30 * time.Millisecond,
+		rate:         rate, // req per second
+		burstLimit:   10,
 	}
 }
 
@@ -50,6 +52,7 @@ func (h *httpSource) GetOutput() <-chan Element {
 }
 
 func (h *httpSource) Emit() {
+	defer close(h.out)
 	request := func(url string) error {
 		resp, err := http.Get(url)
 		if err != nil {
@@ -88,12 +91,24 @@ func (h *httpSource) Emit() {
 	for {
 		select {
 		case <-h.done:
+			h.notifyConsumers()
 			return
 		default:
 			for _, u := range h.urls {
 				<-throttle
 				go request(u)
 			}
+		}
+	}
+}
+func (h *httpSource) notifyConsumers() {
+	if len(h.consumers) > 0 {
+		// some time for consumer to get last element
+		time.Sleep(h.drainTimeout)
+		for _, done := range h.consumers {
+			go func() {
+				done <- true
+			}()
 		}
 	}
 }

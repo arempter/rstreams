@@ -26,13 +26,14 @@ func (m *merge) VerboseOFF() {
 }
 
 func (m *merge) Emit() {
+	defer close(m.out)
+
 	processSource := func(in <-chan Element) {
 		for e := range in {
 			m.out <- e
 		}
 	}
 
-	defer close(m.out)
 	for _, s := range m.sources {
 		go s.Emit()
 		processSource(s.GetOutput())
