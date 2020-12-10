@@ -9,16 +9,15 @@ import (
 
 //todo:
 // logging && error (err type verb, debug etc)
-// source freq
 // parallel - grouped
 // restart source on err
 // ToMat
-// align buffer size for all components
 
 type Stream interface {
 	Filter(c interface{}) *stream
 	Map(p interface{}) *stream
 	To(f sink.Collector) *stream
+	Count() *stream
 	Run()
 	Stop()
 	WireTap()
@@ -47,10 +46,26 @@ func (s *stream) Map(predicate interface{}) *stream {
 	return s
 }
 
+func (s *stream) MapPar(par int, predicate interface{}) *stream {
+	s.steps = append(s.steps, processor.StepFuncParWithPredicate{
+		Body:      processor.MapPar,
+		Predicate: predicate,
+		Parallel:  par,
+	})
+	return s
+}
+
 func (s *stream) Filter(predicate interface{}) *stream {
 	s.steps = append(s.steps, processor.StepFuncWithPredicate{
 		Body:      processor.Filter,
 		Predicate: predicate,
+	})
+	return s
+}
+
+func (s *stream) Count() *stream {
+	s.steps = append(s.steps, processor.StepFuncSpec{
+		Body: processor.Counter,
 	})
 	return s
 }
@@ -73,7 +88,12 @@ func (s *stream) runnableDAG() {
 		case processor.StepFuncWithPredicate:
 			out := make(chan source.Element)
 			fSpec := step.(processor.StepFuncWithPredicate)
-			fSpec.Body(s.inChan, fSpec.Predicate, out)
+			fSpec.Body(s.inChan, fSpec.Predicate, out, 0)
+			s.inChan = out
+		case processor.StepFuncParWithPredicate:
+			out := make(chan source.Element)
+			fSpec := step.(processor.StepFuncParWithPredicate)
+			fSpec.Body(s.inChan, fSpec.Predicate, out, fSpec.Parallel)
 			s.inChan = out
 		case processor.StepFuncSpec:
 			pf := step.(processor.StepFuncSpec).Body
@@ -82,7 +102,6 @@ func (s *stream) runnableDAG() {
 		case sink.Collector:
 			c := step.(sink.Collector)
 			s.source.Subscribe(c.DoneCh())
-			c.SetOnNextCh(s.source.OnNextCh())
 			s.errors = append(s.errors, c.ErrorCh())
 			c.Receive(s.inChan)
 		default:

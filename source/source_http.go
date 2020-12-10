@@ -1,6 +1,7 @@
 package source
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -10,21 +11,18 @@ import (
 )
 
 type httpSource struct {
-	urls      []string
-	out       chan Element
-	onNext    chan bool
-	done      chan bool
-	error     chan error
-	consumers []chan<- bool
-	Verbose   bool
+	urls       []string
+	out        chan Element
+	done       chan bool
+	error      chan error
+	consumers  []chan<- bool
+	Verbose    bool
+	rate       time.Duration
+	burstLimit int
 }
 
 func (h *httpSource) ErrorCh() <-chan error {
 	return h.error
-}
-
-func (h *httpSource) OnNextCh() chan bool {
-	return h.onNext
 }
 
 func (h *httpSource) VerboseON() {
@@ -35,14 +33,15 @@ func (h *httpSource) VerboseOFF() {
 	h.Verbose = false
 }
 
-func Http(urls []string) *httpSource {
+func Http(urls []string, rate time.Duration) *httpSource {
 	return &httpSource{
-		urls:    urls,
-		out:     make(chan Element),
-		onNext:  make(chan bool),
-		done:    make(chan bool),
-		error:   make(chan error),
-		Verbose: false,
+		urls:       urls,
+		out:        make(chan Element),
+		done:       make(chan bool),
+		error:      make(chan error),
+		Verbose:    false,
+		rate:       rate, // req per second
+		burstLimit: 10,
 	}
 }
 
@@ -69,17 +68,31 @@ func (h *httpSource) Emit() {
 		}
 		return nil
 	}
+	throttle := make(chan time.Time, h.burstLimit)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	run := true
-	for run == true {
+	go func() {
+		ticker := time.NewTicker(h.rate)
+		defer ticker.Stop()
+
+		for t := range ticker.C {
+			select {
+			case throttle <- t:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+
+	for {
 		select {
 		case <-h.done:
-			run = false
-		// only emit on signal from consumer
-		case <-h.onNext:
-			h.sendToErr("source => got demand signal")
+			return
+		default:
 			for _, u := range h.urls {
-				request(u)
+				<-throttle
+				go request(u)
 			}
 		}
 	}

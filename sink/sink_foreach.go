@@ -31,24 +31,14 @@ func (f *foreach) SetOnNextCh(c chan bool) {
 }
 
 func (f *foreach) Receive(in <-chan source.Element) {
-	run := true
-	for run == true {
-		select {
-		case <-f.done:
-			run = false
-		case f.onNext <- true:
-		case e, open := <-in:
-			if !open {
-				run = false
-			}
-			switch e.Payload.(type) {
-			case string:
-				fmt.Println(e.Payload)
-			case int:
-				fmt.Println(e.Payload)
-			case []byte:
-				fmt.Print(string(e.Payload.([]byte)))
-			}
+	for e := range in {
+		switch e.Payload.(type) {
+		case string:
+			fmt.Println(e.Payload)
+		case int:
+			fmt.Println(e.Payload)
+		case []byte:
+			fmt.Print(string(e.Payload.([]byte)))
 		}
 	}
 }

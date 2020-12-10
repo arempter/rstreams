@@ -1,6 +1,8 @@
 package sink
 
-import "rstreams/source"
+import (
+	"rstreams/source"
+)
 
 type ignore struct {
 	onNext chan bool
@@ -16,10 +18,8 @@ func (i *ignore) SetOnNextCh(c chan bool) {
 	i.onNext = c
 }
 
-func (i ignore) Receive(in <-chan source.Element) {
-	i.onNext <- true
+func (i *ignore) Receive(in <-chan source.Element) {
 	for range in {
-		go func() { i.onNext <- true }()
 	}
 }
 

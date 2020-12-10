@@ -6,7 +6,6 @@ import (
 
 type Source interface {
 	GetOutput() <-chan Element
-	OnNextCh() chan bool
 	Emit()
 	Stop()
 	ErrorCh() <-chan error

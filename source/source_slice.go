@@ -11,16 +11,11 @@ import (
 type sliceSource struct {
 	in           interface{}
 	out          chan Element
-	onNext       chan bool
 	done         chan bool
 	error        chan error
 	consumers    []chan<- bool
 	drainTimeout time.Duration
 	Verbose      bool
-}
-
-func (s *sliceSource) OnNextCh() chan bool {
-	return s.onNext
 }
 
 func (s *sliceSource) ErrorCh() <-chan error {
@@ -50,8 +45,7 @@ func Slice(i interface{}) *sliceSource {
 	}
 	return &sliceSource{
 		in:           i,
-		out:          make(chan Element),
-		onNext:       make(chan bool),
+		out:          make(chan Element, 1),
 		done:         make(chan bool),
 		error:        make(chan error),
 		drainTimeout: 30 * time.Millisecond,
@@ -65,27 +59,18 @@ func (s *sliceSource) GetOutput() <-chan Element {
 
 func (s *sliceSource) Emit() {
 	iVal := reflect.ValueOf(s.in)
-	run := true
 	defer close(s.out)
-	for run == true {
+
+	for e := 0; e < iVal.Len(); e++ {
+		nextE := Element{
+			Payload:   iVal.Index(e).Interface(),
+			Timestamp: time.Now(),
+		}
 		select {
 		case <-s.done:
 			s.notifyConsumers()
-			run = false
-		case <-s.onNext:
-			s.sendToErr("source => got demand signal")
-			if iVal.Len() > 0 {
-				s.out <- Element{
-					Payload:   iVal.Index(0).Interface(),
-					Timestamp: time.Now(),
-				}
-				iVal = iVal.Slice(1, iVal.Len())
-			}
-			if iVal.Len() == 0 {
-				s.sendToErr("source => no more elements")
-				s.notifyConsumers()
-				run = false
-			}
+			return
+		case s.out <- nextE:
 		}
 	}
 }

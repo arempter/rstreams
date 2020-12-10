@@ -6,7 +6,7 @@ import (
 	"rstreams/util"
 )
 
-func Filter(in <-chan source.Element, predicate interface{}, out chan source.Element) {
+func Filter(in <-chan source.Element, predicate interface{}, out chan source.Element, par int) {
 	if err := util.IsFilterFunc(predicate); err != nil {
 		panic(err.Error())
 	}
@@ -19,5 +19,6 @@ func Filter(in <-chan source.Element, predicate interface{}, out chan source.Ele
 				}
 			}
 		}
+		close(out)
 	}()
 }
