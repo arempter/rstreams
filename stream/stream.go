@@ -18,7 +18,7 @@ type Stream interface {
 	Filter(c interface{}) *stream
 	Map(p interface{}) *stream
 	To(f sink.Collector) *stream
-	CountBy(windowSize time.Duration) *stream
+	CountByWindow(windowSize time.Duration) *stream
 	Run()
 	Stop()
 	WireTap()
@@ -27,7 +27,6 @@ type Stream interface {
 type stream struct {
 	source source.Source
 	steps  []interface{}
-	inChan <-chan source.Element
 	done   chan bool
 	errors []<-chan error
 }
@@ -47,15 +46,6 @@ func (s *stream) Map(predicate interface{}) *stream {
 	return s
 }
 
-func (s *stream) MapPar(par int, predicate interface{}) *stream {
-	s.steps = append(s.steps, processor.StepFuncParWithPredicate{
-		Body:      processor.MapPar,
-		Predicate: predicate,
-		Parallel:  par,
-	})
-	return s
-}
-
 func (s *stream) Filter(predicate interface{}) *stream {
 	s.steps = append(s.steps, processor.StepFuncWithPredicate{
 		Body:      processor.Filter,
@@ -64,7 +54,7 @@ func (s *stream) Filter(predicate interface{}) *stream {
 	return s
 }
 
-func (s *stream) CountBy(windowSize time.Duration) *stream {
+func (s *stream) CountByWindow(windowSize time.Duration) *stream {
 	s.steps = append(s.steps, processor.StepFuncSpec{
 		Body: processor.Counter,
 		ArgF: windowSize,
@@ -82,30 +72,29 @@ func (s *stream) Run() {
 }
 
 func (s *stream) runnableDAG() {
+	var elements <-chan source.Element
 	go s.source.Emit()
-	s.inChan = s.source.GetOutput()
+	elements = s.source.GetOutput()
 	s.errors = append(s.errors, s.source.ErrorCh())
 	for _, step := range s.steps {
 		switch step.(type) {
 		case processor.StepFuncWithPredicate:
-			out := make(chan source.Element)
-			fSpec := step.(processor.StepFuncWithPredicate)
-			fSpec.Body(s.inChan, fSpec.Predicate, out, 0)
-			s.inChan = out
+			stepFunc := step.(processor.StepFuncWithPredicate)
+			stepOut := stepFunc.Body(elements, stepFunc.Predicate, 0)
+			elements = stepOut
 		case processor.StepFuncParWithPredicate:
-			out := make(chan source.Element)
-			fSpec := step.(processor.StepFuncParWithPredicate)
-			fSpec.Body(s.inChan, fSpec.Predicate, out, fSpec.Parallel)
-			s.inChan = out
+			stepFunc := step.(processor.StepFuncParWithPredicate)
+			stepOut := stepFunc.Body(elements, stepFunc.Predicate, stepFunc.Parallel)
+			elements = stepOut
 		case processor.StepFuncSpec:
-			sf := step.(processor.StepFuncSpec)
-			pOut := sf.Body(s.inChan, sf.ArgF)
-			s.inChan = pOut
+			stepFunc := step.(processor.StepFuncSpec)
+			stepOut := stepFunc.Body(elements, stepFunc.ArgF)
+			elements = stepOut
 		case sink.Collector:
-			c := step.(sink.Collector)
-			s.source.Subscribe(c.DoneCh())
-			s.errors = append(s.errors, c.ErrorCh())
-			c.Receive(s.inChan)
+			stepFunc := step.(sink.Collector)
+			s.source.Subscribe(stepFunc.DoneCh())
+			s.errors = append(s.errors, stepFunc.ErrorCh())
+			stepFunc.Receive(elements)
 		default:
 			panic("Unsupported step type")
 		}

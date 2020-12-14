@@ -4,7 +4,7 @@ import (
 	"rstreams/source"
 )
 
-type StepFuncPredicate func(in <-chan source.Element, f interface{}, out chan source.Element, par int)
+type StepFuncPredicate func(in <-chan source.Element, f interface{}, par int) chan source.Element
 type StepFuncWithPredicate struct {
 	Body      StepFuncPredicate
 	Predicate interface{}
