@@ -6,13 +6,13 @@ import (
 	"time"
 )
 
-func Counter(in <-chan source.Element, windowSize interface{}) <-chan source.Element {
+func Counter(in <-chan source.Element, windowSize interface{}) chan source.Element {
 	c := 0
 	w, ok := windowSize.(time.Duration)
 	if !ok {
 		panic("window size must be of type time.Duration")
 	}
-	out := make(chan source.Element)
+	out := make(chan source.Element, 1024)
 	go func() {
 		defer close(out)
 		go func() {

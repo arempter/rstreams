@@ -39,17 +39,17 @@ func FromSource(source source.Source) *stream {
 }
 
 func (s *stream) Map(predicate interface{}) *stream {
-	s.steps = append(s.steps, processor.StepFuncWithPredicate{
-		Body:      processor.Map,
-		Predicate: predicate,
+	s.steps = append(s.steps, processor.StepFuncSpec{
+		Body: processor.Map,
+		ArgF: predicate,
 	})
 	return s
 }
 
 func (s *stream) Filter(predicate interface{}) *stream {
-	s.steps = append(s.steps, processor.StepFuncWithPredicate{
-		Body:      processor.Filter,
-		Predicate: predicate,
+	s.steps = append(s.steps, processor.StepFuncSpec{
+		Body: processor.Filter,
+		ArgF: predicate,
 	})
 	return s
 }
@@ -78,23 +78,13 @@ func (s *stream) runnableDAG() {
 	s.errors = append(s.errors, s.source.ErrorCh())
 	for _, step := range s.steps {
 		switch step.(type) {
-		case processor.StepFuncWithPredicate:
-			stepFunc := step.(processor.StepFuncWithPredicate)
-			stepOut := stepFunc.Body(elements, stepFunc.Predicate, 0)
-			elements = stepOut
-		case processor.StepFuncParWithPredicate:
-			stepFunc := step.(processor.StepFuncParWithPredicate)
-			stepOut := stepFunc.Body(elements, stepFunc.Predicate, stepFunc.Parallel)
-			elements = stepOut
 		case processor.StepFuncSpec:
-			stepFunc := step.(processor.StepFuncSpec)
-			stepOut := stepFunc.Body(elements, stepFunc.ArgF)
-			elements = stepOut
+			elements = step.(processor.StepFuncSpec).Apply(elements)
 		case sink.Collector:
-			stepFunc := step.(sink.Collector)
-			s.source.Subscribe(stepFunc.DoneCh())
-			s.errors = append(s.errors, stepFunc.ErrorCh())
-			stepFunc.Receive(elements)
+			collector := step.(sink.Collector)
+			s.source.Subscribe(collector.DoneCh())
+			s.errors = append(s.errors, collector.ErrorCh())
+			collector.Receive(elements)
 		default:
 			panic("Unsupported step type")
 		}

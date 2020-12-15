@@ -6,8 +6,8 @@ import (
 	"rstreams/util"
 )
 
-func Filter(in <-chan source.Element, predicate interface{}, par int) chan source.Element {
-	var out = make(chan source.Element)
+func Filter(in <-chan source.Element, predicate interface{}) chan source.Element {
+	var out = make(chan source.Element, 1024)
 	if err := util.IsFilterFunc(predicate); err != nil {
 		panic(err.Error())
 	}

@@ -6,15 +6,15 @@ import (
 	"rstreams/util"
 )
 
-func Map(in <-chan source.Element, predicate interface{}, par int) chan source.Element {
-	var out = make(chan source.Element)
+func Map(in <-chan source.Element, predicate interface{}) chan source.Element {
+	var out = make(chan source.Element, 1024)
 	if err := util.IsMapFunc(predicate); err != nil {
 		panic(err.Error())
 	}
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				Map(in, predicate, par)
+				Map(in, predicate)
 			}
 		}()
 		for e := range in {

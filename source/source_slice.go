@@ -45,7 +45,7 @@ func Slice(i interface{}) *sliceSource {
 	}
 	return &sliceSource{
 		in:           i,
-		out:          make(chan Element, 1),
+		out:          make(chan Element, 1024),
 		done:         make(chan bool),
 		error:        make(chan error),
 		drainTimeout: 30 * time.Millisecond,
