@@ -1,6 +1,7 @@
 package stream
 
 import (
+	"errors"
 	"log"
 	"rstreams/processor"
 	"rstreams/sink"
@@ -67,11 +68,21 @@ func (s *stream) To(f sink.Collector) *stream {
 	return s
 }
 
-func (s *stream) Run() {
-	s.runnableDAG()
+func (s stream) validateGraph() error {
+	if _, ok := s.steps[len(s.steps)-1].(sink.Collector); !ok {
+		return errors.New("collector is not the last step of the stream")
+	}
+	return nil
 }
 
-func (s *stream) runnableDAG() {
+func (s *stream) Run() {
+	if err := s.validateGraph(); err != nil {
+		panic(err.Error())
+	}
+	s.streamGraph()
+}
+
+func (s *stream) streamGraph() {
 	var elements <-chan source.Element
 	go s.source.Emit()
 	elements = s.source.GetOutput()
